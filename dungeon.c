@@ -44,23 +44,19 @@ int main(){
   	int freeSpace = 1;
 	int randRow = (rand() % 14) + 1;
 	int randCol = (rand() % 71) + 1;
-	printf("Starting room #%d\n", roomsPlaced+1);
-	for(int i=0; i<Rooms[roomsPlaced].rows; i++){
-	  for(int j=0; j<Rooms[roomsPlaced].cols; j++){
-	  	if(dungeon[randRow][randCol + j] == '.' || isdigit(dungeon[randRow][randCol + j])){
+	for(int i=-1; i<Rooms[roomsPlaced].rows+1; i++){
+	  for(int j=-1; j<Rooms[roomsPlaced].cols+1; j++){
+	  	if(dungeon[randRow + i][randCol + j] != ' '){
 	  		freeSpace = -1;
-	  		printf("bad spot...restarting\n");
 	  		break;
 	  	}
 	  }
 	  if(freeSpace == -1){
-	  printf("breaking...out\n");
 	  	break;
 	  }
 	}
 	
 	if(freeSpace == 1){
-	
 	  for(int i=0; i<Rooms[roomsPlaced].rows; i++){
 	    for(int j=0; j<Rooms[roomsPlaced].cols;j++){
 	   	if(i==0&&j==0)
@@ -70,7 +66,6 @@ int main(){
 	    }
 	    randRow++;
 	  }
-	  printf("room #%d placed successfully...\n", roomsPlaced+1);	
 	  roomsPlaced++;
 	}
 
