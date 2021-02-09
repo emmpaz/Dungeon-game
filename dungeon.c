@@ -44,6 +44,7 @@ int main(){
   	int freeSpace = 1;
 	int randRow = (rand() % 14) + 1;
 	int randCol = (rand() % 71) + 1;
+	//checking if room + border will fit
 	for(int i=-1; i<Rooms[roomsPlaced].rows+1; i++){
 	  for(int j=-1; j<Rooms[roomsPlaced].cols+1; j++){
 	  	if(dungeon[randRow + i][randCol + j] != ' '){
@@ -55,21 +56,21 @@ int main(){
 	  	break;
 	  }
 	}
-	
+	//if fits it will place
 	if(freeSpace == 1){
 	  for(int i=0; i<Rooms[roomsPlaced].rows; i++){
 	    for(int j=0; j<Rooms[roomsPlaced].cols;j++){
 	   	if(i==0&&j==0)
-	   	  dungeon[randRow][randCol + j] = (roomsPlaced+1) + '0';
+	   	  dungeon[randRow + i][randCol + j] = (roomsPlaced+1) + '0';
 	   	else			
-	     	  dungeon[randRow][randCol + j] = '.';
+	     	  dungeon[randRow + i][randCol + j] = '.';
 	    }
-	    randRow++;
 	  }
 	  roomsPlaced++;
 	}
 
 }
+//printing board
   for(int i = 0; i < ROWS; i++){
     for(int j = 0; j < COLS; j++){
 	printf("%c", dungeon[i][j]);
