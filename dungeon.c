@@ -5,37 +5,46 @@
 #define COLS 80
 #define MAX_ROOMS 6
 
+//struct for a room
 typedef struct room{
 	int rows;
    	int cols;
+   	int gridRow;
+   	int gridCol;
 	
 }room;
+
+//struct for the dungeon
+typedef struct dungeon{
+	room Rooms[MAX_ROOMS];
+	char dungeonGrid[ROWS][COLS];
+
+}dungeon;
 
 int main(){
 
  srand(time(0));
- room Rooms[MAX_ROOMS];
+ dungeon Dungeon;
  //random dimensions for each room in the array
  for(int i = 0; i < MAX_ROOMS; i++){
-	Rooms[i].rows = (rand() % 4) + 3;
-	Rooms[i].cols = (rand() % 4) + 4;
+	Dungeon.Rooms[i].rows = (rand() % 4) + 3;
+	Dungeon.Rooms[i].cols = (rand() % 4) + 4;
  }
   //initializing the board to white spaces
-  char dungeon[ROWS][COLS];
   for(int i = 0; i < ROWS; i++){
     for(int j = 0; j < COLS; j++){
-    	dungeon[i][j] = ' ';
+    	Dungeon.dungeonGrid[i][j] = ' ';
     }
   }
   //adding horizontal borders
   for(int i=0; i<COLS; i++){
-    dungeon[0][i] = '-';
-    dungeon[ROWS - 1][i] = '-';
+    Dungeon.dungeonGrid[0][i] = '-';
+    Dungeon.dungeonGrid[ROWS - 1][i] = '-';
   }
   //adding vertical borders
   for(int i=1; i<ROWS-1; i++){
-    dungeon[i][0] = '|';
-    dungeon[i][COLS - 1] = '|';
+    Dungeon.dungeonGrid[i][0] = '|';
+    Dungeon.dungeonGrid[i][COLS - 1] = '|';
   }
   int roomsPlaced = 0;
   int trys=0;
@@ -45,9 +54,9 @@ int main(){
 	int randRow = (rand() % 14) + 1;
 	int randCol = (rand() % 71) + 1;
 	//checking if room + border will fit
-	for(int i=-1; i<Rooms[roomsPlaced].rows+1; i++){
-	  for(int j=-1; j<Rooms[roomsPlaced].cols+1; j++){
-	  	if(dungeon[randRow + i][randCol + j] != ' '){
+	for(int i=-1; i<Dungeon.Rooms[roomsPlaced].rows+1; i++){
+	  for(int j=-1; j<Dungeon.Rooms[roomsPlaced].cols+1; j++){
+	  	if(Dungeon.dungeonGrid[randRow + i][randCol + j] != ' '){
 	  		freeSpace = -1;
 	  		break;
 	  	}
@@ -58,12 +67,14 @@ int main(){
 	}
 	//if fits it will place
 	if(freeSpace == 1){
-	  for(int i=0; i<Rooms[roomsPlaced].rows; i++){
-	    for(int j=0; j<Rooms[roomsPlaced].cols;j++){
+	  for(int i=0; i<Dungeon.Rooms[roomsPlaced].rows; i++){
+	    for(int j=0; j<Dungeon.Rooms[roomsPlaced].cols;j++){
+	    	Dungeon.Rooms[roomsPlaced].gridRow = randRow;
+	    	Dungeon.Rooms[roomsPlaced].gridCol = randCol;
 	   	if(i==0&&j==0)
-	   	  dungeon[randRow + i][randCol + j] = (roomsPlaced+1) + '0';
+	   	  Dungeon.dungeonGrid[randRow + i][randCol + j] = (roomsPlaced+1) + '0';
 	   	else			
-	     	  dungeon[randRow + i][randCol + j] = '.';
+	     	  Dungeon.dungeonGrid[randRow + i][randCol + j] = '.';
 	    }
 	  }
 	  roomsPlaced++;
@@ -73,7 +84,7 @@ int main(){
 //printing board
   for(int i = 0; i < ROWS; i++){
     for(int j = 0; j < COLS; j++){
-	printf("%c", dungeon[i][j]);
+	printf("%c", Dungeon.dungeonGrid[i][j]);
     }
     printf("\n");
   }
