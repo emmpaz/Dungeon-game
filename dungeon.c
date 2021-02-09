@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
+#include <ctype.h>
 #define ROWS 21
 #define COLS 80
 #define MAX_ROOMS 6
@@ -41,29 +41,37 @@ int main(){
   int trys=0;
   //this loop should continue until all rooms are placed in free spaces
   while(roomsPlaced < 6){
-  	int freeSpace = 0;
+  	int freeSpace = 1;
 	int randRow = (rand() % 14) + 1;
 	int randCol = (rand() % 71) + 1;
+	printf("Starting room #%d\n", roomsPlaced+1);
 	for(int i=0; i<Rooms[roomsPlaced].rows; i++){
 	  for(int j=0; j<Rooms[roomsPlaced].cols; j++){
-	  	if(dungeon[randRow][randCol + j] != ' '){
+	  	if(dungeon[randRow][randCol + j] == '.' || isdigit(dungeon[randRow][randCol + j])){
 	  		freeSpace = -1;
 	  		printf("bad spot...restarting\n");
 	  		break;
 	  	}
 	  }
-	  if(freeSpace == -1)
+	  if(freeSpace == -1){
+	  printf("breaking...out\n");
 	  	break;
+	  }
 	}
 	
 	if(freeSpace == 1){
+	
 	  for(int i=0; i<Rooms[roomsPlaced].rows; i++){
-	    for(int j=0; j<Rooms[roomsPlaced].cols;j++){		
-	     dungeon[randRow][randCol + j] = '.';
+	    for(int j=0; j<Rooms[roomsPlaced].cols;j++){
+	   	if(i==0&&j==0)
+	   	  dungeon[randRow][randCol + j] = (roomsPlaced+1) + '0';
+	   	else			
+	     	  dungeon[randRow][randCol + j] = '.';
 	    }
 	    randRow++;
 	  }
-	  roomsPlaced++;	
+	  printf("room #%d placed successfully...\n", roomsPlaced+1);	
+	  roomsPlaced++;
 	}
 
 }
