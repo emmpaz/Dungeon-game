@@ -4,6 +4,7 @@
 #define ROWS 21
 #define COLS 80
 #define MAX_ROOMS 6
+#define MAX_STAIRS 3
 
 //struct for a room
 typedef struct room{
@@ -14,12 +15,20 @@ typedef struct room{
 	
 }room;
 
+//struct for stairs to store where placed on grid
+typedef struct stairs{
+	int gridRow;
+	int gridCol;
+	char direction;
+}stairs;
+
 //struct for the dungeon
 typedef struct dungeon{
 	room Rooms[MAX_ROOMS];
 	char dungeonGrid[ROWS][COLS];
-
+	stairs Stairs[MAX_STAIRS];
 }dungeon;
+
 
 int main(){
 
@@ -27,8 +36,8 @@ int main(){
  dungeon Dungeon;
  //random dimensions for each room in the array
  for(int i = 0; i < MAX_ROOMS; i++){
-	Dungeon.Rooms[i].rows = (rand() % 4) + 3;
-	Dungeon.Rooms[i].cols = (rand() % 4) + 4;
+	Dungeon.Rooms[i].rows = (rand() % 4) + 4;
+	Dungeon.Rooms[i].cols = (rand() % 4) + 5;
  }
   //initializing the board to white spaces
   for(int i = 0; i < ROWS; i++){
@@ -49,10 +58,10 @@ int main(){
   int roomsPlaced = 0;
   int trys=0;
   //this loop should continue until all rooms are placed in free spaces
-  while(roomsPlaced < 6){
+  while(roomsPlaced < MAX_ROOMS){
   	int freeSpace = 1;
-	int randRow = (rand() % 14) + 1;
-	int randCol = (rand() % 71) + 1;
+	int randRow = (rand() % 13) + 1;
+	int randCol = (rand() % 70) + 1;
 	//checking if room + border will fit
 	for(int i=-1; i<Dungeon.Rooms[roomsPlaced].rows+1; i++){
 	  for(int j=-1; j<Dungeon.Rooms[roomsPlaced].cols+1; j++){
@@ -71,86 +80,53 @@ int main(){
 	    for(int j=0; j<Dungeon.Rooms[roomsPlaced].cols;j++){
 	    	Dungeon.Rooms[roomsPlaced].gridRow = randRow;
 	    	Dungeon.Rooms[roomsPlaced].gridCol = randCol;
-	   	if(i==0&&j==0)
+	   	/*if(i==0&&j==0)
 	   	  Dungeon.dungeonGrid[randRow + i][randCol + j] = (roomsPlaced+1) + '0';
-	   	else			
+	   	else	*/		
 	     	  Dungeon.dungeonGrid[randRow + i][randCol + j] = '.';
 	    }
 	  }
 	  roomsPlaced++;
 	}
+}
+//this loops through each room and its neigbor in the array to connect them together with corridors
+for(int i = 0; i < MAX_ROOMS-1;i++){
+        //finds the direction in which a room finds its neighboor room
+	int directionY = (Dungeon.Rooms[i+1].gridRow - Dungeon.Rooms[i].gridRow);
+	int directionX = (Dungeon.Rooms[i+1].gridCol - Dungeon.Rooms[i].gridCol);
+	
+	//Y direction
+	for(int j = Dungeon.Rooms[i].gridRow; j != Dungeon.Rooms[i+1].gridRow; j += (directionY>0) ? 1 : -1){
+		if(Dungeon.dungeonGrid[j][Dungeon.Rooms[i].gridCol] == ' ')
+			Dungeon.dungeonGrid[j][Dungeon.Rooms[i].gridCol] = '#';
+	}
+	//X direction
+	for(int k = Dungeon.Rooms[i].gridCol; k != Dungeon.Rooms[i+1].gridCol; k += (directionX>0) ? 1 : -1){
+		if(Dungeon.dungeonGrid[Dungeon.Rooms[i].gridRow+directionY][k] == ' ')
+			Dungeon.dungeonGrid[Dungeon.Rooms[i].gridRow+directionY][k] = '#';
+	}
+}
+//this loop will place stairs randomly on the map but making sure it is on a floor
+int stairsPlaced = 0;
+while(stairsPlaced < MAX_STAIRS){
+	int randRow = (rand() % 13) + 1;
+	int randCol = (rand() % 70) + 1;
+	if(Dungeon.dungeonGrid[randRow][randCol] == '.' || Dungeon.dungeonGrid[randRow][randCol] == '#'){
+		Dungeon.Stairs[stairsPlaced].gridRow = randRow;
+		Dungeon.Stairs[stairsPlaced].gridCol = randCol;
+		//will switch between upstairs and downstairs
+		if(stairsPlaced % 2 == 0){
+			Dungeon.Stairs[stairsPlaced++].direction = '<';
+			Dungeon.dungeonGrid[randRow][randCol] = '<';
+		}
+		else{
+			Dungeon.Stairs[stairsPlaced++].direction = '>';
+			Dungeon.dungeonGrid[randRow][randCol] = '>';
+		}
+		
+	} 
 
 }
-
-	int x1=-1;
-	int x2=-1;
-	int y1=-1;
-	int y2=-1;
-	for(int i=0; i<ROWS; i++)
-	{
-		for(int j = 0; j < COLS; j++){
-			if(isdigit(Dungeon.dungeonGrid[i][j]))
-			{
-				x2=x1;
-				y2=y1;
-				x1=i;
-				y1=j;
-				if(x2==-1)
-					break;
-				printf("%d %d %d %d\n",x1,x2,y1,y2);
-				int k=0;
-				if(x1>x2)
-				{
-				while(x1-k>x2)
-				{
-					if(Dungeon.dungeonGrid[x1-k][y1] == ' ')
-					{
-						Dungeon.dungeonGrid[x1-k][y1]='#';
-					}
-					k++;
-				}
-				k=x1-k;
-				}
-				else
-				{
-					while(x1+k<x2)
-					{
-						if(Dungeon.dungeonGrid[x1+k][y1] == ' ')
-						{
-							Dungeon.dungeonGrid[x1+k][y1]='#';
-						}
-						k++;
-					}
-				k=x1+k;
-				}
-				int g=0;
-				if(y1<y2)
-				{
-					while(y1+g<y2)
-					{
-						if(Dungeon.dungeonGrid[k][y1+g] == ' ')
-						{
-							Dungeon.dungeonGrid[k][y1+g]='#';
-						}
-						g++;
-					}
-				}
-				else
-				{
-					while(y1-g>y2)
-					{
-						if(Dungeon.dungeonGrid[k][y1-g] == ' ')
-						{
-							Dungeon.dungeonGrid[k][y1-g]='#';
-						}
-						g++;
-					}
-				}
-			}
-		}
-	}
-	
-	
 //printing board
   for(int i = 0; i < ROWS; i++){
     for(int j = 0; j < COLS; j++){
