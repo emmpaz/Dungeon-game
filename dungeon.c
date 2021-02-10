@@ -13,7 +13,7 @@ typedef struct room{
    	int gridCol;
 	
 }room;
-//bruh
+
 //struct for the dungeon
 typedef struct dungeon{
 	room Rooms[MAX_ROOMS];
@@ -81,6 +81,76 @@ int main(){
 	}
 
 }
+
+	int x1=-1;
+	int x2=-1;
+	int y1=-1;
+	int y2=-1;
+	for(int i=0; i<ROWS; i++)
+	{
+		for(int j = 0; j < COLS; j++){
+			if(isdigit(Dungeon.dungeonGrid[i][j]))
+			{
+				x2=x1;
+				y2=y1;
+				x1=i;
+				y1=j;
+				if(x2==-1)
+					break;
+				printf("%d %d %d %d\n",x1,x2,y1,y2);
+				int k=0;
+				if(x1>x2)
+				{
+				while(x1-k>x2)
+				{
+					if(Dungeon.dungeonGrid[x1-k][y1] == ' ')
+					{
+						Dungeon.dungeonGrid[x1-k][y1]='#';
+					}
+					k++;
+				}
+				k=x1-k;
+				}
+				else
+				{
+					while(x1+k<x2)
+					{
+						if(Dungeon.dungeonGrid[x1+k][y1] == ' ')
+						{
+							Dungeon.dungeonGrid[x1+k][y1]='#';
+						}
+						k++;
+					}
+				k=x1+k;
+				}
+				int g=0;
+				if(y1<y2)
+				{
+					while(y1+g<y2)
+					{
+						if(Dungeon.dungeonGrid[k][y1+g] == ' ')
+						{
+							Dungeon.dungeonGrid[k][y1+g]='#';
+						}
+						g++;
+					}
+				}
+				else
+				{
+					while(y1-g>y2)
+					{
+						if(Dungeon.dungeonGrid[k][y1-g] == ' ')
+						{
+							Dungeon.dungeonGrid[k][y1-g]='#';
+						}
+						g++;
+					}
+				}
+			}
+		}
+	}
+	
+	
 //printing board
   for(int i = 0; i < ROWS; i++){
     for(int j = 0; j < COLS; j++){
@@ -89,5 +159,7 @@ int main(){
     printf("\n");
   }
   return 0;
+  
+  
   
 }
