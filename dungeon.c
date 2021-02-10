@@ -13,7 +13,7 @@ typedef struct room{
    	int gridCol;
 	
 }room;
-
+//bruh
 //struct for the dungeon
 typedef struct dungeon{
 	room Rooms[MAX_ROOMS];
