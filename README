@@ -1,8 +1,10 @@
 Emmauel Paz epaz@iastate.edu
-wrote dungeon.c and makefile
-added rooms, stairs, fixed connecting rooms.
 Caden Michael Last clast@iastate.edu
-Connected rooms, helped write dungeon.c
 Jack Dennis Kennedy jackkenn@iastate.edu
-moral support, wrote readMe.
+
+Our task was to build a dungeon that was a certain dimension that had rooms connected by corridors and at least 1 staircase going up and at least 1 going down.
+This dungeon had to be random everytime we ran the code. For our solution, we started with making structs for; rooms, stairs and the dungeon. In main we first
+made the rooms be random dimensions with certain boundaries. Then we randomly placed the rooms on the dungeon board and they had to be at least one space apart
+from the other rooms. We then connected each room on the board with corridors by using the top left coordinate of each room and finding a path to connect them.
+After having rooms and corridors, we then added stairs in a random location on the board making sure it was on a '#' or '.'. We also have borders for the dungeon.
 
