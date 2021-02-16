@@ -1,1 +1,9 @@
+02/09/2021 2:00 EP: Started working on making the dungeon board and having borders.
+
+02/09/2021 3:00 EP, CML: Spawned rooms in random locations on the board.
+
+02/10/2021 7:00 EP, CML: Added corridors that connected every room and added stairs.
+
+02/11/2021 3:10 EP, JDK: Made README, CHANGELOG and Makefile for turn in purposes.
+
 
