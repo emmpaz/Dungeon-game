@@ -52,6 +52,13 @@ void printBoard(char board[ROWS][COLS]){
 int main(int argc, char *argv[]){
   dungeon Dungeon;
   char dungeonChar[ROWS][COLS];
+  for(int i=0; i<ROWS; i++)
+    {
+      for(int j=0; j<COLS; j++)
+	{
+	  dungeonChar[i][j]=' ';
+	}
+    }
   Dungeon.pc.playerChar = '@';
   //start of load
   //creating path
@@ -89,7 +96,6 @@ int main(int argc, char *argv[]){
   {
 
   //Checking if has min bytes for needed for data to be read in
-    printf("%s\n", argv[1]);
   fseek(saveFile, 0, SEEK_END);
   //if(ftell(saveFile)  > 1708) {
     fseek(saveFile, 0, SEEK_SET);
@@ -116,56 +122,55 @@ int main(int argc, char *argv[]){
     fread(downStairCords, sizeof(int8_t), numberOfDownStairs * 2, saveFile);
     
     //debug
-    for(int i = 0; i<ROWS; i++) {
-      for(int j = 0; j<COLS; j++) {
-	//printf("Loaded hardness: %d\n", hardness[i][j]);
-      }
-    }
-    printf("Loaded total dungeon rooms: %i\n", numberOfRooms);
-    for(int i = 0; i<numberOfRooms; i++) {
-      printf("Loaded room index: %i, X: %i, Y: %i, Rows: %i, Cols: %i\n", i, *(roomCords + i*4 + 0), *(roomCords + i*4 + 1), *(roomCords + i*4 + 2), *(roomCords + i*4 + 3));
-    }
-    printf("Loaded total number of stairs: %i, upStairs: %i, downStairs: %i\n", numberOfUpStairs + numberOfDownStairs, numberOfUpStairs, numberOfDownStairs);
-    for(int i = 0; i<numberOfUpStairs; i++) {
-      printf("Loaded upStair index: %i, X: %i, Y: %i\n", i, *(upStairCords + i*2 + 0), *(upStairCords + i*2 + 1));
-    }
-    for(int i = 0; i<numberOfDownStairs; i++) {
-      printf("Loaded downStair index: %i, X: %i, Y: %i\n", i, *(downStairCords + i*2 + 0), *(downStairCords + i*2 + 1));
-    }
+    //for(int i = 0; i<ROWS; i++) {
+    //for(int j = 0; j<COLS; j++) {
+    //printf("Loaded hardness: %d\n", hardness[i][j]);
+	//}
+    //}
+    //printf("Loaded total dungeon rooms: %i\n", numberOfRooms);
+    //for(int i = 0; i<numberOfRooms; i++) {
+    //  printf("Loaded room index: %i, X: %i, Y: %i, Rows: %i, Cols: %i\n", i, *(roomCords + i*4 + 0), *(roomCords + i*4 + 1), *(roomCords + i*4 + 2), *(roomCords + i*4 + 3));
+    //}
+    //printf("Loaded total number of stairs: %i, upStairs: %i, downStairs: %i\n", numberOfUpStairs + numberOfDownStairs, numberOfUpStairs, numberOfDownStairs);
+    //for(int i = 0; i<numberOfUpStairs; i++) {
+    //  printf("Loaded upStair index: %i, X: %i, Y: %i\n", i, *(upStairCords + i*2 + 0), *(upStairCords + i*2 + 1));
+    //}
+    //for(int i = 0; i<numberOfDownStairs; i++) {
+    //  printf("Loaded downStair index: %i, X: %i, Y: %i\n", i, *(downStairCords + i*2 + 0), *(downStairCords + i*2 + 1));
+    //}
     //debug
     
   fclose(saveFile);
   
   // *(roomCords + (roomindex)*4 + (0 = x, 1 = y, 2 = rows, 3 = cols)))
+  //adding hardness, stairs, and rooms for loaded dungeons
   for(int i=0; i<numberOfRooms; i++)
     {
-      for(int j=0; j<*(roomCords + (i)*4 +2); j++)
+      for(int j=0; j<*(roomCords + (i)*4 +3); j++)
 	{
-	  for(int k=0; k<*(roomCords + (i)*4 +3); k++)
+	  for(int k=0; k<*(roomCords + (i)*4 +2); k++)
 	    {
-	      dungeonChar[*(roomCords + (i)*4)+j][*(roomCords + (i)*4+1)+k]='.';
+	      dungeonChar[*(roomCords + (i)*4+1)+j][*(roomCords + (i)*4)+k]='.';
 	    }
 	}
+     
     }
   for(int i=0; i<ROWS; i++)
     {
       for(int j=0; j<COLS; j++)
 	{
 	  Dungeon.dungeonGrid[i][j]=hardness[i][j];
-	  if(i==0|j==0|i==ROWS-1||j==COLS-1)
-	    {
-	      Dungeon.dungeonGrid[i][j]=255;
-	    }
 	}
     }
 
   // *(roomCords + (roomindex)*4 + (0 = x, 1 = y)))
   for(int i = 0; i < numberOfUpStairs; i++){
-    dungeonChar[*(upStairCords + (i)*2)][*(upStairCords + (i)*2 + 1)] = '<';
+    dungeonChar[*(upStairCords + (i)*2+1)][*(upStairCords + (i)*2)] = '<';
   }
   for(int i = 0; i < numberOfDownStairs; i++){
-    dungeonChar[*(downStairCords + (i)*2)][*(downStairCords + (i)*2 + 1)] = '>';
+    dungeonChar[*(downStairCords + (i)*2+1)][*(downStairCords + (i)*2)] = '>';
   }
+  
   }
   //end of load
   else
@@ -296,10 +301,10 @@ for(int i = 0; i < MAX_STAIRS; i++){
  //declaring char dungeon
 for(int i = 0; i < ROWS; i++){
     for(int j = 0; j < COLS; j++){
-    	if(Dungeon.dungeonGrid[i][j] == FLOOR_HARDNESS&&dungeonChar[i][j]!='.'&&dungeonChar[i][j]!='<'&&dungeonChar[i][j]!='>'){
-    		dungeonChar[i][j] = '#';
-    	}
-    	else if(Dungeon.dungeonGrid[i][j] == BORDER_HARDNESS){
+      if(Dungeon.dungeonGrid[i][j] == FLOOR_HARDNESS&&dungeonChar[i][j]!='.'&&dungeonChar[i][j]!='<'&&dungeonChar[i][j]!='>'){
+      dungeonChar[i][j] = '#';
+      }
+      else if(Dungeon.dungeonGrid[i][j] == BORDER_HARDNESS){
     		if(i == 0 || i == ROWS-1)
     		  dungeonChar[i][j] = '-';
     		else
@@ -335,20 +340,20 @@ for(int i = 0; i < ROWS; i++){
   numberOfRooms = sizeof(Dungeon.Rooms) / sizeof(room); //hopefully gets length of dungeon rooms array
   
   //debug
-  printf("Saved total dungeon rooms: %i\n", numberOfRooms);
+  //printf("Saved total dungeon rooms: %i\n", numberOfRooms);
   //debug
   
   free(roomCords);
   roomCords = (int8_t*)malloc(sizeof(int8_t*) * numberOfRooms * 4);
   for(int i = 0; i<numberOfRooms; i++) {
-    *(roomCords + i*4 + 0) = Dungeon.Rooms[i].gridRow;
-    *(roomCords + i*4 + 1) = Dungeon.Rooms[i].gridCol;
-    *(roomCords + i*4 + 2) = Dungeon.Rooms[i].rows;
-    *(roomCords + i*4 + 3) = Dungeon.Rooms[i].cols;
+    *(roomCords + i*4 + 1) = Dungeon.Rooms[i].gridRow;
+    *(roomCords + i*4 + 0) = Dungeon.Rooms[i].gridCol;
+    *(roomCords + i*4 + 3) = Dungeon.Rooms[i].rows;
+    *(roomCords + i*4 + 2) = Dungeon.Rooms[i].cols;
     
     //debug
-    printf("Dungeon room index: %i, X: %i, Y: %i, Rows: %i, Cols: %i\n", i, Dungeon.Rooms[i].gridRow, Dungeon.Rooms[i].gridCol, Dungeon.Rooms[i].rows, Dungeon.Rooms[i].cols);
-    printf("Saved room index  : %i, X: %i, Y: %i, Rows: %i, Cols: %i\n", i, *(roomCords + i*4 + 0), *(roomCords + i*4 + 1), *(roomCords + i*4 + 2), *(roomCords + i*4 + 3));
+    //printf("Dungeon room index: %i, X: %i, Y: %i, Rows: %i, Cols: %i\n", i, Dungeon.Rooms[i].gridRow, Dungeon.Rooms[i].gridCol, Dungeon.Rooms[i].rows, Dungeon.Rooms[i].cols);
+    //printf("Saved room index  : %i, X: %i, Y: %i, Rows: %i, Cols: %i\n", i, *(roomCords + i*4 + 0), *(roomCords + i*4 + 1), *(roomCords + i*4 + 2), *(roomCords + i*4 + 3));
     //debug
     
   }
@@ -367,8 +372,8 @@ for(int i = 0; i < ROWS; i++){
   }
   
   //debug
-  printf("Dungeon total number of stairs: %i\n", sizeof(Dungeon.Stairs) / sizeof(stairs));
-  printf("save total number of stairs   : %i, upStairs: %i, downStairs: %i\n", numberOfUpStairs + numberOfDownStairs, numberOfUpStairs, numberOfDownStairs);
+  //printf("Dungeon total number of stairs: %i\n", sizeof(Dungeon.Stairs) / sizeof(stairs));
+  //printf("save total number of stairs   : %i, upStairs: %i, downStairs: %i\n", numberOfUpStairs + numberOfDownStairs, numberOfUpStairs, numberOfDownStairs);
   //debug
   
   free(upStairCords);
@@ -380,22 +385,22 @@ for(int i = 0; i < ROWS; i++){
   for(int i = 0; i<sizeof(Dungeon.Stairs) / sizeof(stairs); i++) {
     if(Dungeon.Stairs[i].direction != '\0') {
       if(Dungeon.Stairs[i].direction == '<') {
-        *(upStairCords + a*2 + 0) = Dungeon.Stairs[i].gridRow;
-        *(upStairCords + a*2 + 1) = Dungeon.Stairs[i].gridCol;
+        *(upStairCords + a*2 + 1) = Dungeon.Stairs[i].gridRow;
+        *(upStairCords + a*2 + 0) = Dungeon.Stairs[i].gridCol;
         
 	//debug
-        printf("Dungeon upStair index: %i, X: %i, Y: %i\n", i, Dungeon.Stairs[i].gridRow, Dungeon.Stairs[i].gridCol);
-        printf("Saved upStair index  : %i, X: %i, Y: %i\n", i, *(upStairCords + a*2 + 0), *(upStairCords + a*2 + 1));
+        //printf("Dungeon upStair index: %i, X: %i, Y: %i\n", i, Dungeon.Stairs[i].gridRow, Dungeon.Stairs[i].gridCol);
+        //printf("Saved upStair index  : %i, X: %i, Y: %i\n", i, *(upStairCords + a*2 + 0), *(upStairCords + a*2 + 1));
         //debug
         
         a++;
       } else if(Dungeon.Stairs[i].direction == '>') {
-        *(downStairCords + b*2 + 0) = Dungeon.Stairs[i].gridRow;
-        *(downStairCords + b*2 + 1) = Dungeon.Stairs[i].gridCol;
+        *(downStairCords + b*2 + 1) = Dungeon.Stairs[i].gridRow;
+        *(downStairCords + b*2 + 0) = Dungeon.Stairs[i].gridCol;
         
 	//debug
-        printf("Dungeon downStair index: %i, X: %i, Y: %i\n", i, Dungeon.Stairs[i].gridRow, Dungeon.Stairs[i].gridCol);
-        printf("Saved downStair index  : %i, X: %i, Y: %i\n", i, *(downStairCords + b*2 + 0), *(downStairCords + b*2 + 1));
+        //printf("Dungeon downStair index: %i, X: %i, Y: %i\n", i, Dungeon.Stairs[i].gridRow, Dungeon.Stairs[i].gridCol);
+        //printf("Saved downStair index  : %i, X: %i, Y: %i\n", i, *(downStairCords + b*2 + 0), *(downStairCords + b*2 + 1));
         //debug
         
         b++;
