@@ -6,4 +6,12 @@
 
 02/11/2021 3:10 EP, JDK: Made README, CHANGELOG and Makefile for turn in purposes.
 
+02/16/2021 ?:?? EP: Implemented hardness and added player struct.
 
+02/16/2021 ?:?? JDK: Implemented read and write from flies.
+
+02/17/2021 ?:?? CML: Almost made the loading a dungeon work.
+
+02/18/2021 5:00 JDK: Fixed unsigned ints and couple other bugs and made README.
+
+02/18/2021 7:00 CML: Fixed the rest of loading a dungeon from a file and Changelog.
