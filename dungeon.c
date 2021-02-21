@@ -28,14 +28,11 @@ typedef struct room{
 
 //player character
 typedef struct PC{
-<<<<<<< HEAD
 	int gridRow;
 	int gridCol;
-=======
 	int8_t gridRow;
 	int8_t gridCol;
 	char playerChar;
->>>>>>> 93b6a56699280fd9732b181cb7b0c898f39baedd
 }PC;
 
 //struct for stairs to store where placed on grid
