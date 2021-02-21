@@ -21,8 +21,6 @@ typedef struct room{
 typedef struct PC{
 	int gridRow;
 	int gridCol;
-	char player = '@';
-
 }PC;
 
 //struct for stairs to store where placed on grid
