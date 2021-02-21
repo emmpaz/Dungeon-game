@@ -16,6 +16,7 @@ typedef struct cell{
 	int hardness;
 	int priority;
 	char character;
+	int visited;
 }cell;
 //struct for a room
 typedef struct room{
