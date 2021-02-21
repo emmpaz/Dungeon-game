@@ -1,10 +1,9 @@
 Emmauel Paz epaz@iastate.edu
 Caden Michael Last clast@iastate.edu
 Jack Dennis Kennedy jackkenn@iastate.edu
+Assignment 1.02
 
-Our task was to build a dungeon that was a certain dimension that had rooms connected by corridors and at least 1 staircase going up and at least 1 going down.
-This dungeon had to be random everytime we ran the code. For our solution, we started with making structs for; rooms, stairs and the dungeon. In main we first
-made the rooms be random dimensions with certain boundaries. Then we randomly placed the rooms on the dungeon board and they had to be at least one space apart
-from the other rooms. We then connected each room on the board with corridors by using the top left coordinate of each room and finding a path to connect them.
-After having rooms and corridors, we then added stairs in a random location on the board making sure it was on a '#' or '.'. We also have borders for the dungeon.
-
+  Our task was to read in or save binary data through a structured binary file to reconstruct a dungeon with said binary data. There are two command-line arguments 
+that can flag if the program will save and or load a dungeon. All integer data will be read in with specific byte sizes and converted from big-endian to host. Data written 
+to file will have a similar process where it will be converted from host to big-endian. The hardness will be used to generate the border and the open spaces. Then rooms
+and stairs will be added last overriding the corridors.
