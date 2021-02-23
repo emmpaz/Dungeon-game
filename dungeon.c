@@ -1,8 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <stdint.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <endian.h>
+#include <sys/time.h>
 #include <string.h>
+#include <limits.h>
+#include <assert.h>
+#include <errno.h>
 #define ROWS 21
 #define COLS 80
 #define MAX_ROOMS 6
@@ -11,12 +18,16 @@
 #define ROCK_HARDNESS 250
 #define FLOOR_HARDNESS 0
 
+#include "heap.h"
+
 //this will contain all the info for a cell in the dungeon
 typedef struct cell{
 	int hardness;
 	int priority;
 	char character;
-	int visited;
+	heap_node_t *hn;
+	int gridRow;
+	int gridCol;
 }cell;
 //struct for a room
 typedef struct room{
@@ -28,11 +39,10 @@ typedef struct room{
 
 //player character
 typedef struct PC{
-	int gridRow;
-	int gridCol;
 	int8_t gridRow;
 	int8_t gridCol;
 	char playerChar;
+
 }PC;
 
 //struct for stairs to store where placed on grid
@@ -51,13 +61,93 @@ typedef struct dungeon{
 	PC pc;
 }dungeon;
 
-void printBoard(char board[ROWS][COLS]){
+static int32_t cell_cmp(const void *key, const void *with) {
+  return ((cell *) key)->priority - ((cell *) with)->priority;
+}
+
+void printBoard(dungeon *d){
 	for(int i = 0; i < ROWS;i++){
 	  for(int j = 0; j < COLS; j++){
-	  	printf("%c", board[i][j]);
+	  	if(d->dungeon[i][j].hardness != 0)
+	  		printf("%c", d->dungeon[i][j].character);
+	  	else if(d->pc.gridRow==i && d->pc.gridCol==j)
+	  		printf("%c", d->dungeon[i][j].character);
+	  	else
+	  		printf("%d", d->dungeon[i][j].priority%10);
 	  }
 	  printf("\n");
 	}
+}
+
+void Dijkstras_nontun(dungeon *d){
+	static cell *p;
+	heap_t h;
+	for(int i = 0; i < ROWS; i++){
+	  for(int j = 0; j < COLS; j++){
+	    d->dungeon[i][j].priority = INT_MAX; 
+	  }
+	}
+	
+	d->dungeon[d->pc.gridRow][d->pc.gridCol].priority = 0;
+	
+	heap_init(&h, cell_cmp,  NULL);
+	
+	for(int i = 0; i < ROWS; i++){
+	  for(int j = 0; j < COLS; j++){
+	    if(d->dungeon[i][j].hardness == 0)
+	      d->dungeon[i][j].hn = heap_insert(&h, &d->dungeon[i][j]);
+	    else
+	      d->dungeon[i][j].hn = NULL;
+	  }
+	}
+	
+	while((p = heap_remove_min(&h))){
+	  p->hn = NULL;
+	  
+	  if((d->dungeon[p->gridRow + 1][p->gridCol + 1].hn) && (d->dungeon[p->gridRow + 1][p->gridCol + 1].hardness == 0) && (d->dungeon[p->gridRow + 1][p->gridCol + 1].priority > (p->priority + 1))){
+	  	d->dungeon[p->gridRow + 1][p->gridCol + 1].priority = p->priority + 1;
+	  	heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow + 1][p->gridCol + 1].hn);
+	  }
+	
+	 if((d->dungeon[p->gridRow + 1][p->gridCol - 1].hn) && (d->dungeon[p->gridRow + 1][p->gridCol - 1].hardness == 0) && (d->dungeon[p->gridRow + 1][p->gridCol - 1].priority > (p->priority + 1))){
+	  	d->dungeon[p->gridRow + 1][p->gridCol - 1].priority = p->priority + 1;
+	  	heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow + 1][p->gridCol - 1].hn);
+	  }
+	  
+	  if((d->dungeon[p->gridRow - 1][p->gridCol + 1].hn) && (d->dungeon[p->gridRow - 1][p->gridCol + 1].hardness == 0) && (d->dungeon[p->gridRow - 1][p->gridCol + 1].priority > (p->priority + 1))){
+	  	d->dungeon[p->gridRow - 1][p->gridCol + 1].priority = p->priority + 1;
+	  	heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow - 1][p->gridCol + 1].hn);
+	  }
+	  
+	  if((d->dungeon[p->gridRow - 1][p->gridCol - 1].hn) && (d->dungeon[p->gridRow - 1][p->gridCol - 1].hardness == 0) && (d->dungeon[p->gridRow - 1][p->gridCol - 1].priority > (p->priority + 1))){
+	  	d->dungeon[p->gridRow - 1][p->gridCol - 1].priority = p->priority + 1;
+	  	heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow - 1][p->gridCol - 1].hn);
+	  }
+	  
+	  if((d->dungeon[p->gridRow + 1][p->gridCol].hn) && (d->dungeon[p->gridRow + 1][p->gridCol].hardness == 0) && (d->dungeon[p->gridRow + 1][p->gridCol].priority > (p->priority + 1))){
+	  	d->dungeon[p->gridRow + 1][p->gridCol].priority = p->priority + 1;
+	  	heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow + 1][p->gridCol].hn);
+	  }
+	  
+	   if((d->dungeon[p->gridRow - 1][p->gridCol].hn) && (d->dungeon[p->gridRow - 1][p->gridCol].hardness == 0) && (d->dungeon[p->gridRow - 1][p->gridCol].priority > (p->priority + 1))){
+	  	d->dungeon[p->gridRow - 1][p->gridCol].priority = p->priority + 1;
+	  	heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow - 1][p->gridCol].hn);
+	  }
+	  
+	  if((d->dungeon[p->gridRow][p->gridCol + 1].hn) && (d->dungeon[p->gridRow][p->gridCol + 1].hardness == 0) && (d->dungeon[p->gridRow][p->gridCol + 1].priority > (p->priority + 1))){
+	  	d->dungeon[p->gridRow][p->gridCol + 1].priority = p->priority + 1;
+	  	heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow][p->gridCol + 1].hn);
+	  }
+	  
+	  if((d->dungeon[p->gridRow][p->gridCol - 1].hn) && (d->dungeon[p->gridRow][p->gridCol - 1].hardness == 0) && (d->dungeon[p->gridRow][p->gridCol - 1].priority > (p->priority + 1))){
+	  	d->dungeon[p->gridRow][p->gridCol - 1].priority = p->priority + 1;
+	  	heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow][p->gridCol - 1].hn);
+	  }
+	
+	
+	}
+
+
 }
 
 int main(int argc, char *argv[]){
@@ -72,6 +162,20 @@ int main(int argc, char *argv[]){
 	  dungeonChar[i][j]=' ';
 	}
     }
+  //intializing cell dungeon positions
+  for(int i = 0; i < ROWS; i++){
+    for(int j = 0; j < COLS; j++){
+      cellDungeon.dungeon[i][j].gridRow = i;
+      cellDungeon.dungeon[i][j].gridCol = j;
+    }
+
+  }
+  //for cell dungeon
+  for(int i = 0; i < ROWS; i++){
+    for(int j = 0; j < COLS; j++){
+    	cellDungeon.dungeon[i][j].character = ' ';
+    }
+  }
   Dungeon.pc.playerChar = '@';
   //start of load
   //creating path
@@ -164,6 +268,8 @@ int main(int argc, char *argv[]){
 	  for(int k=0; k<*(roomCords + (i)*4 +2); k++)
 	    {
 	      dungeonChar[*(roomCords + (i)*4+1)+j][*(roomCords + (i)*4)+k]='.';
+	      //for cell dungeon
+	      cellDungeon.dungeon[*(roomCords + (i)*4+1)+j][*(roomCords + (i)*4)+k].character='.';
 	    }
 	}
      
@@ -173,15 +279,21 @@ int main(int argc, char *argv[]){
       for(int j=0; j<COLS; j++)
 	{
 	  Dungeon.dungeonGrid[i][j]=hardness[i][j];
+	  //for cell dungeon
+	  cellDungeon.dungeon[i][j].hardness = hardness[i][j];
 	}
     }
 
   // *(roomCords + (roomindex)*4 + (0 = x, 1 = y)))
   for(int i = 0; i < numberOfUpStairs; i++){
     dungeonChar[*(upStairCords + (i)*2+1)][*(upStairCords + (i)*2)] = '<';
+    //for cell dungeon
+    cellDungeon.dungeon[*(upStairCords + (i)*2+1)][*(upStairCords + (i)*2)].character = '<';
   }
   for(int i = 0; i < numberOfDownStairs; i++){
     dungeonChar[*(downStairCords + (i)*2+1)][*(downStairCords + (i)*2)] = '>';
+    //for cell dungeon
+    cellDungeon.dungeon[*(downStairCords + (i)*2+1)][*(downStairCords + (i)*2)].character = '>';
   }
   
   }
@@ -205,6 +317,8 @@ int main(int argc, char *argv[]){
   for(int i = 0; i < ROWS; i++){
     for(int j = 0; j < COLS; j++){
     	Dungeon.dungeonGrid[i][j] = ROCK_HARDNESS;
+    	//for cell dungeon
+    	cellDungeon.dungeon[i][j].hardness = ROCK_HARDNESS;
     }
   }
 
@@ -212,11 +326,17 @@ int main(int argc, char *argv[]){
   for(int i=0; i<COLS; i++){
     Dungeon.dungeonGrid[0][i] = BORDER_HARDNESS;
     Dungeon.dungeonGrid[ROWS - 1][i] = BORDER_HARDNESS;
+    //for cell dungeon
+    cellDungeon.dungeon[0][i].hardness = BORDER_HARDNESS;
+    cellDungeon.dungeon[ROWS - 1][i].hardness = BORDER_HARDNESS;
   }
   //adding vertical borders
   for(int i=1; i<ROWS-1; i++){
     Dungeon.dungeonGrid[i][0] = BORDER_HARDNESS;
     Dungeon.dungeonGrid[i][COLS - 1] = BORDER_HARDNESS;
+    //for cell dungeon
+    cellDungeon.dungeon[i][0].hardness = BORDER_HARDNESS;
+    cellDungeon.dungeon[i][COLS - 1].hardness = BORDER_HARDNESS;
   }
 
   int roomsPlaced = 0;
@@ -246,10 +366,13 @@ int main(int argc, char *argv[]){
 	    	if(roomsPlaced == 0){
 	    	  Dungeon.pc.gridRow = randRow;
 	    	  Dungeon.pc.gridCol = randCol;
+	    	  cellDungeon.pc.gridRow = randRow;
+	    	  cellDungeon.pc.gridCol = randCol;
 	    	}
 	    	Dungeon.Rooms[roomsPlaced].gridRow = randRow;
 	    	Dungeon.Rooms[roomsPlaced].gridCol = randCol;
 	     	Dungeon.dungeonGrid[randRow + i][randCol + j] = 0;
+	     	cellDungeon.dungeon[randRow + i][randCol + j].hardness = 0;
 	    }
 	  }
 	  roomsPlaced++;
@@ -263,13 +386,19 @@ for(int i = 0; i < MAX_ROOMS-1;i++){
 
 	//Y direction
 	for(int j = Dungeon.Rooms[i].gridRow; j != Dungeon.Rooms[i+1].gridRow; j += (directionY>0) ? 1 : -1){
-		if(Dungeon.dungeonGrid[j][Dungeon.Rooms[i].gridCol] == ROCK_HARDNESS)
+		if(Dungeon.dungeonGrid[j][Dungeon.Rooms[i].gridCol] == ROCK_HARDNESS){
 			Dungeon.dungeonGrid[j][Dungeon.Rooms[i].gridCol] = 0;
+			cellDungeon.dungeon[j][Dungeon.Rooms[i].gridCol].character = '#';
+			cellDungeon.dungeon[j][Dungeon.Rooms[i].gridCol].hardness = 0;
+			}
 	}
 	//X direction
 	for(int k = Dungeon.Rooms[i].gridCol; k != Dungeon.Rooms[i+1].gridCol; k += (directionX>0) ? 1 : -1){
-		if(Dungeon.dungeonGrid[Dungeon.Rooms[i].gridRow+directionY][k] == ROCK_HARDNESS)
+		if(Dungeon.dungeonGrid[Dungeon.Rooms[i].gridRow+directionY][k] == ROCK_HARDNESS){
 			Dungeon.dungeonGrid[Dungeon.Rooms[i].gridRow+directionY][k] = 0;
+			cellDungeon.dungeon[Dungeon.Rooms[i].gridRow+directionY][k].character = '#';
+			cellDungeon.dungeon[Dungeon.Rooms[i].gridRow+directionY][k].hardness = 0;
+			}
 	}
 }
 //this loop will place stairs randomly on the map but making sure it is on a floor
@@ -285,10 +414,14 @@ while(stairsPlaced < MAX_STAIRS){
 		if(stairsPlaced % 2 == 0){
 			Dungeon.Stairs[stairsPlaced++].direction = '<';
 			Dungeon.dungeonGrid[randRow][randCol] = 0;
+			cellDungeon.dungeon[randRow][randCol].hardness = 0;
+			cellDungeon.dungeon[randRow][randCol].character = '<';
 		}
 		else{
 			Dungeon.Stairs[stairsPlaced++].direction = '>';
 			Dungeon.dungeonGrid[randRow][randCol] = 0;
+			cellDungeon.dungeon[randRow][randCol].hardness = 0;
+			cellDungeon.dungeon[randRow][randCol].character = '>';
 		}
 
 	}
@@ -302,6 +435,7 @@ for(int i = 0; i < MAX_ROOMS; i++){
   for(int j = 0; j<Dungeon.Rooms[i].rows;j++){
   	for(int k = 0; k<Dungeon.Rooms[i].cols;k++){
   		dungeonChar[Dungeon.Rooms[i].gridRow+j][Dungeon.Rooms[i].gridCol+k] = '.';
+  		cellDungeon.dungeon[Dungeon.Rooms[i].gridRow+j][Dungeon.Rooms[i].gridCol+k].character = '.';
   	}
   }
 }
@@ -309,6 +443,7 @@ for(int i = 0; i < MAX_ROOMS; i++){
 //placing stairs on char dungeon
 for(int i = 0; i < MAX_STAIRS; i++){
   dungeonChar[Dungeon.Stairs[i].gridRow][Dungeon.Stairs[i].gridCol] = Dungeon.Stairs[i].direction;
+  cellDungeon.dungeon[Dungeon.Stairs[i].gridRow][Dungeon.Stairs[i].gridCol].character = Dungeon.Stairs[i].direction;
 }
     }//
  //declaring char dungeon
@@ -318,16 +453,24 @@ for(int i = 0; i < ROWS; i++){
       dungeonChar[i][j] = '#';
       }
       else if(Dungeon.dungeonGrid[i][j] == BORDER_HARDNESS){
-    		if(i == 0 || i == ROWS-1)
+    		if(i == 0 || i == ROWS-1){
     		  dungeonChar[i][j] = '-';
-    		else
+    		  cellDungeon.dungeon[i][j].character = '-';
+    		  }
+    		else{
     		  dungeonChar[i][j] = '|';
+    		  cellDungeon.dungeon[i][j].character = '|';
+    		  }
     	}
     	else if(dungeonChar[i][j]!='.'&&dungeonChar[i][j]!='<'&&dungeonChar[i][j]!='>'){
     		dungeonChar[i][j] = ' ';
     	}
     }
   }
+ //placing player
+ dungeonChar[Dungeon.pc.gridRow][Dungeon.pc.gridCol] = Dungeon.pc.playerChar;
+ cellDungeon.dungeon[Dungeon.pc.gridRow][Dungeon.pc.gridCol].character = Dungeon.pc.playerChar;
+  
  if(argc==2&&strcmp(argv[1],"--save")==0)
     {
   //start of save
@@ -448,10 +591,12 @@ for(int i = 0; i < ROWS; i++){
   fclose(saveFile);
   //end of save
     }
-  //debug
+  //debugprintBoard(&Dungeon);
   //printf("calculated save size: %i\n", 12 + 4 + 4 + 2 + 1680 + 2 + numberOfRooms * 4 + 2 + numberOfUpStairs * 2 + 2 + numberOfDownStairs * 2);
-
-  printBoard(dungeonChar);
+  printf("DSDADA\n");
+  Dijkstras_nontun(&cellDungeon);
+  printBoard(&cellDungeon);
+ 
 
   return 0;
 }
