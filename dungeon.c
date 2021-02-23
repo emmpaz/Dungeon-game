@@ -61,11 +61,13 @@ typedef struct dungeon{
 	PC pc;
 }dungeon;
 
+//comparator for heap
 static int32_t cell_cmp(const void *key, const void *with) {
   return ((cell *) key)->priority - ((cell *) with)->priority;
 }
 
-void printBoard(dungeon *d){
+//prints board for nontunnelers
+void printNonTun(dungeon *d){
 	for(int i = 0; i < ROWS;i++){
 	  for(int j = 0; j < COLS; j++){
 	  	if(d->dungeon[i][j].hardness != 0)
@@ -79,19 +81,47 @@ void printBoard(dungeon *d){
 	}
 }
 
+//prints board for tunnelers
+void printTun(dungeon *d){
+        for(int i = 0; i < ROWS;i++){
+	  for(int j = 0; j < COLS; j++){
+	  	if(d->dungeon[i][j].hardness == 255)
+	  		printf("%c", d->dungeon[i][j].character);
+	  	else if(d->pc.gridRow==i && d->pc.gridCol==j)
+	  		printf("%c", d->dungeon[i][j].character);
+	  	else
+	  		printf("%d", d->dungeon[i][j].priority%10);
+	  }
+	  printf("\n");
+	}
+}
+
+//prints regular board
+void printBoard(dungeon *d){
+	for(int i = 0; i < ROWS;i++){
+	  for(int j = 0; j < COLS; j++){
+	    printf("%c", d->dungeon[i][j].character);
+	  }
+	  printf("\n");
+	}
+}
+
+//algorithm for nontunnelers
 void Dijkstras_nontun(dungeon *d){
+	//points to the current cell that was popped from heap
 	static cell *p;
 	heap_t h;
+	//declaring all cells to be distance infinity
 	for(int i = 0; i < ROWS; i++){
 	  for(int j = 0; j < COLS; j++){
 	    d->dungeon[i][j].priority = INT_MAX; 
 	  }
 	}
-	
+	//making the player character the root of heap and distance 0 since that where we want to start
 	d->dungeon[d->pc.gridRow][d->pc.gridCol].priority = 0;
 	
 	heap_init(&h, cell_cmp,  NULL);
-	
+	//inserting all floor cells inside heap
 	for(int i = 0; i < ROWS; i++){
 	  for(int j = 0; j < COLS; j++){
 	    if(d->dungeon[i][j].hardness == 0)
@@ -100,48 +130,170 @@ void Dijkstras_nontun(dungeon *d){
 	      d->dungeon[i][j].hn = NULL;
 	  }
 	}
-	
+	//this loop pulls the root of the heap and goes through its neighbors. It will go until heap is empty
 	while((p = heap_remove_min(&h))){
 	  p->hn = NULL;
 	  
-	  if((d->dungeon[p->gridRow + 1][p->gridCol + 1].hn) && (d->dungeon[p->gridRow + 1][p->gridCol + 1].hardness == 0) && (d->dungeon[p->gridRow + 1][p->gridCol + 1].priority > (p->priority + 1))){
+	  if((d->dungeon[p->gridRow + 1][p->gridCol + 1].hn) && (d->dungeon[p->gridRow + 1][p->gridCol + 1].priority > (p->priority + 1))){
 	  	d->dungeon[p->gridRow + 1][p->gridCol + 1].priority = p->priority + 1;
 	  	heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow + 1][p->gridCol + 1].hn);
 	  }
 	
-	 if((d->dungeon[p->gridRow + 1][p->gridCol - 1].hn) && (d->dungeon[p->gridRow + 1][p->gridCol - 1].hardness == 0) && (d->dungeon[p->gridRow + 1][p->gridCol - 1].priority > (p->priority + 1))){
+	 if((d->dungeon[p->gridRow + 1][p->gridCol - 1].hn) && (d->dungeon[p->gridRow + 1][p->gridCol - 1].priority > (p->priority + 1))){
 	  	d->dungeon[p->gridRow + 1][p->gridCol - 1].priority = p->priority + 1;
 	  	heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow + 1][p->gridCol - 1].hn);
 	  }
 	  
-	  if((d->dungeon[p->gridRow - 1][p->gridCol + 1].hn) && (d->dungeon[p->gridRow - 1][p->gridCol + 1].hardness == 0) && (d->dungeon[p->gridRow - 1][p->gridCol + 1].priority > (p->priority + 1))){
+	  if((d->dungeon[p->gridRow - 1][p->gridCol + 1].hn) && (d->dungeon[p->gridRow - 1][p->gridCol + 1].priority > (p->priority + 1))){
 	  	d->dungeon[p->gridRow - 1][p->gridCol + 1].priority = p->priority + 1;
 	  	heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow - 1][p->gridCol + 1].hn);
 	  }
 	  
-	  if((d->dungeon[p->gridRow - 1][p->gridCol - 1].hn) && (d->dungeon[p->gridRow - 1][p->gridCol - 1].hardness == 0) && (d->dungeon[p->gridRow - 1][p->gridCol - 1].priority > (p->priority + 1))){
+	  if((d->dungeon[p->gridRow - 1][p->gridCol - 1].hn) && (d->dungeon[p->gridRow - 1][p->gridCol - 1].priority > (p->priority + 1))){
 	  	d->dungeon[p->gridRow - 1][p->gridCol - 1].priority = p->priority + 1;
 	  	heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow - 1][p->gridCol - 1].hn);
 	  }
 	  
-	  if((d->dungeon[p->gridRow + 1][p->gridCol].hn) && (d->dungeon[p->gridRow + 1][p->gridCol].hardness == 0) && (d->dungeon[p->gridRow + 1][p->gridCol].priority > (p->priority + 1))){
+	  if((d->dungeon[p->gridRow + 1][p->gridCol].hn) && (d->dungeon[p->gridRow + 1][p->gridCol].priority > (p->priority + 1))){
 	  	d->dungeon[p->gridRow + 1][p->gridCol].priority = p->priority + 1;
 	  	heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow + 1][p->gridCol].hn);
 	  }
 	  
-	   if((d->dungeon[p->gridRow - 1][p->gridCol].hn) && (d->dungeon[p->gridRow - 1][p->gridCol].hardness == 0) && (d->dungeon[p->gridRow - 1][p->gridCol].priority > (p->priority + 1))){
+	   if((d->dungeon[p->gridRow - 1][p->gridCol].hn) && (d->dungeon[p->gridRow - 1][p->gridCol].priority > (p->priority + 1))){
 	  	d->dungeon[p->gridRow - 1][p->gridCol].priority = p->priority + 1;
 	  	heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow - 1][p->gridCol].hn);
 	  }
 	  
-	  if((d->dungeon[p->gridRow][p->gridCol + 1].hn) && (d->dungeon[p->gridRow][p->gridCol + 1].hardness == 0) && (d->dungeon[p->gridRow][p->gridCol + 1].priority > (p->priority + 1))){
+	  if((d->dungeon[p->gridRow][p->gridCol + 1].hn) && (d->dungeon[p->gridRow][p->gridCol + 1].priority > (p->priority + 1))){
 	  	d->dungeon[p->gridRow][p->gridCol + 1].priority = p->priority + 1;
 	  	heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow][p->gridCol + 1].hn);
 	  }
 	  
-	  if((d->dungeon[p->gridRow][p->gridCol - 1].hn) && (d->dungeon[p->gridRow][p->gridCol - 1].hardness == 0) && (d->dungeon[p->gridRow][p->gridCol - 1].priority > (p->priority + 1))){
+	  if((d->dungeon[p->gridRow][p->gridCol - 1].hn) && (d->dungeon[p->gridRow][p->gridCol - 1].priority > (p->priority + 1))){
 	  	d->dungeon[p->gridRow][p->gridCol - 1].priority = p->priority + 1;
 	  	heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow][p->gridCol - 1].hn);
+	  }
+	
+	
+	}
+
+
+}
+
+//algorithm for tunnelers
+void Dijkstras_tun(dungeon *d){
+	//points to the current cell that was popped from heap
+	static cell *p;
+	heap_t h;
+	//declaring all cells to be distance infinity
+	for(int i = 0; i < ROWS; i++){
+	  for(int j = 0; j < COLS; j++){
+	    d->dungeon[i][j].priority = INT_MAX; 
+	  }
+	}
+	//making the player character the root of heap and distance 0 since that where we want to start
+	d->dungeon[d->pc.gridRow][d->pc.gridCol].priority = 0;
+	
+	heap_init(&h, cell_cmp,  NULL);
+	//add all cells that not border cells, into heap
+	for(int i = 0; i < ROWS; i++){
+	  for(int j = 0; j < COLS; j++){
+	    if(d->dungeon[i][j].hardness != 255)
+	      d->dungeon[i][j].hn = heap_insert(&h, &d->dungeon[i][j]);
+	    else
+	      d->dungeon[i][j].hn = NULL;
+	  }
+	}
+	//this loop pulls the root of the heap and goes through its neighbors. It will go until heap is empty
+	while((p = heap_remove_min(&h))){
+	  p->hn = NULL;
+	  
+	  if(d->dungeon[p->gridRow + 1][p->gridCol + 1].hn){
+	  	if(d->dungeon[p->gridRow + 1][p->gridCol + 1].priority > (p->priority + 1) && d->dungeon[p->gridRow + 1][p->gridCol + 1].hardness ==0){
+	  	  d->dungeon[p->gridRow + 1][p->gridCol + 1].priority = p->priority + 1;
+	  	  heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow + 1][p->gridCol + 1].hn);
+	  	}
+	  	else if(d->dungeon[p->gridRow + 1][p->gridCol + 1].priority > (p->priority + (1 + (p->hardness/85))) && d->dungeon[p->gridRow + 1][p->gridCol + 1].hardness != 0){
+	  	  d->dungeon[p->gridRow + 1][p->gridCol + 1].priority = p->priority + (1 + (p->hardness/85));
+	  	  heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow + 1][p->gridCol + 1].hn);
+	  	}
+	  }
+	
+	 if(d->dungeon[p->gridRow + 1][p->gridCol - 1].hn){
+	  	if(d->dungeon[p->gridRow + 1][p->gridCol - 1].priority > (p->priority + 1) && d->dungeon[p->gridRow + 1][p->gridCol - 1].hardness ==0){
+	  	  d->dungeon[p->gridRow + 1][p->gridCol - 1].priority = p->priority + 1;
+	  	  heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow + 1][p->gridCol - 1].hn);
+	  	}
+	  	else if(d->dungeon[p->gridRow + 1][p->gridCol - 1].priority > (p->priority + (1 + (p->hardness/85))) && d->dungeon[p->gridRow + 1][p->gridCol - 1].hardness != 0){
+	  	  d->dungeon[p->gridRow + 1][p->gridCol - 1].priority = p->priority + (1 + (p->hardness/85));
+	  	  heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow + 1][p->gridCol - 1].hn);
+	  	}
+	  }
+	  
+	  if(d->dungeon[p->gridRow - 1][p->gridCol + 1].hn){
+	  	if(d->dungeon[p->gridRow - 1][p->gridCol + 1].priority > (p->priority + 1) && d->dungeon[p->gridRow - 1][p->gridCol + 1].hardness ==0){
+	  	  d->dungeon[p->gridRow - 1][p->gridCol + 1].priority = p->priority + 1;
+	  	  heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow - 1][p->gridCol + 1].hn);
+	  	}
+	  	else if(d->dungeon[p->gridRow - 1][p->gridCol + 1].priority > (p->priority + (1 + (p->hardness/85))) && d->dungeon[p->gridRow - 1][p->gridCol + 1].hardness != 0){
+	  	  d->dungeon[p->gridRow - 1][p->gridCol + 1].priority = p->priority + (1 + (p->hardness/85));
+	  	  heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow - 1][p->gridCol + 1].hn);
+	  	}
+	  }
+	  
+	  if(d->dungeon[p->gridRow - 1][p->gridCol - 1].hn){
+	  	if(d->dungeon[p->gridRow - 1][p->gridCol - 1].priority > (p->priority + 1) && d->dungeon[p->gridRow - 1][p->gridCol - 1].hardness ==0){
+	  	  d->dungeon[p->gridRow - 1][p->gridCol - 1].priority = p->priority + 1;
+	  	  heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow - 1][p->gridCol - 1].hn);
+	  	}
+	  	else if(d->dungeon[p->gridRow - 1][p->gridCol - 1].priority > (p->priority + (1 + (p->hardness/85))) && d->dungeon[p->gridRow - 1][p->gridCol - 1].hardness != 0){
+	  	  d->dungeon[p->gridRow - 1][p->gridCol - 1].priority = p->priority + (1 + (p->hardness/85));
+	  	  heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow - 1][p->gridCol - 1].hn);
+	  	}
+	  }
+	  
+	  if(d->dungeon[p->gridRow + 1][p->gridCol].hn){
+	  	if(d->dungeon[p->gridRow + 1][p->gridCol].priority > (p->priority + 1) && d->dungeon[p->gridRow + 1][p->gridCol].hardness ==0){
+	  	  d->dungeon[p->gridRow + 1][p->gridCol].priority = p->priority + 1;
+	  	  heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow + 1][p->gridCol].hn);
+	  	}
+	  	else if(d->dungeon[p->gridRow + 1][p->gridCol].priority > (p->priority + (1 + (p->hardness/85))) && d->dungeon[p->gridRow + 1][p->gridCol].hardness != 0){
+	  	  d->dungeon[p->gridRow + 1][p->gridCol].priority = p->priority + (1 + (p->hardness/85));
+	  	  heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow + 1][p->gridCol].hn);
+	  	}
+	  }
+	  
+	  if(d->dungeon[p->gridRow - 1][p->gridCol].hn){
+	  	if(d->dungeon[p->gridRow - 1][p->gridCol].priority > (p->priority + 1) && d->dungeon[p->gridRow - 1][p->gridCol].hardness ==0){
+	  	  d->dungeon[p->gridRow - 1][p->gridCol].priority = p->priority + 1;
+	  	  heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow - 1][p->gridCol].hn);
+	  	}
+	  	else if(d->dungeon[p->gridRow - 1][p->gridCol].priority > (p->priority + (1 + (p->hardness/85))) && d->dungeon[p->gridRow - 1][p->gridCol].hardness != 0){
+	  	  d->dungeon[p->gridRow - 1][p->gridCol].priority = p->priority + (1 + (p->hardness/85));
+	  	  heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow - 1][p->gridCol].hn);
+	  	}
+	  }
+	  
+	  if(d->dungeon[p->gridRow][p->gridCol + 1].hn){
+	  	if(d->dungeon[p->gridRow][p->gridCol + 1].priority > (p->priority + 1) && d->dungeon[p->gridRow][p->gridCol + 1].hardness ==0){
+	  	  d->dungeon[p->gridRow][p->gridCol + 1].priority = p->priority + 1;
+	  	  heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow][p->gridCol + 1].hn);
+	  	}
+	  	else if(d->dungeon[p->gridRow][p->gridCol + 1].priority > (p->priority + (1 + (p->hardness/85))) && d->dungeon[p->gridRow][p->gridCol + 1].hardness != 0){
+	  	  d->dungeon[p->gridRow][p->gridCol + 1].priority = p->priority + (1 + (p->hardness/85));
+	  	  heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow][p->gridCol + 1].hn);
+	  	}
+	  }
+	  
+	  if(d->dungeon[p->gridRow][p->gridCol - 1].hn){
+	  	if(d->dungeon[p->gridRow][p->gridCol - 1].priority > (p->priority + 1) && d->dungeon[p->gridRow][p->gridCol - 1].hardness ==0){
+	  	  d->dungeon[p->gridRow][p->gridCol - 1].priority = p->priority + 1;
+	  	  heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow][p->gridCol - 1].hn);
+	  	}
+	  	else if(d->dungeon[p->gridRow][p->gridCol - 1].priority > (p->priority + (1 + (p->hardness/85))) && d->dungeon[p->gridRow][p->gridCol - 1].hardness != 0){
+	  	  d->dungeon[p->gridRow][p->gridCol - 1].priority = p->priority + (1 + (p->hardness/85));
+	  	  heap_decrease_key_no_replace(&h, d->dungeon[p->gridRow][p->gridCol - 1].hn);
+	  	}
 	  }
 	
 	
@@ -318,7 +470,7 @@ int main(int argc, char *argv[]){
     for(int j = 0; j < COLS; j++){
     	Dungeon.dungeonGrid[i][j] = ROCK_HARDNESS;
     	//for cell dungeon
-    	cellDungeon.dungeon[i][j].hardness = ROCK_HARDNESS;
+    	cellDungeon.dungeon[i][j].hardness = (rand() % 254) + 1;
     }
   }
 
@@ -386,7 +538,7 @@ for(int i = 0; i < MAX_ROOMS-1;i++){
 
 	//Y direction
 	for(int j = Dungeon.Rooms[i].gridRow; j != Dungeon.Rooms[i+1].gridRow; j += (directionY>0) ? 1 : -1){
-		if(Dungeon.dungeonGrid[j][Dungeon.Rooms[i].gridCol] == ROCK_HARDNESS){
+		if(Dungeon.dungeonGrid[j][Dungeon.Rooms[i].gridCol] == ROCK_HARDNESS && cellDungeon.dungeon[j][Dungeon.Rooms[i].gridCol].hardness != 255 && cellDungeon.dungeon[j][Dungeon.Rooms[i].gridCol].hardness != 0){
 			Dungeon.dungeonGrid[j][Dungeon.Rooms[i].gridCol] = 0;
 			cellDungeon.dungeon[j][Dungeon.Rooms[i].gridCol].character = '#';
 			cellDungeon.dungeon[j][Dungeon.Rooms[i].gridCol].hardness = 0;
@@ -394,7 +546,7 @@ for(int i = 0; i < MAX_ROOMS-1;i++){
 	}
 	//X direction
 	for(int k = Dungeon.Rooms[i].gridCol; k != Dungeon.Rooms[i+1].gridCol; k += (directionX>0) ? 1 : -1){
-		if(Dungeon.dungeonGrid[Dungeon.Rooms[i].gridRow+directionY][k] == ROCK_HARDNESS){
+		if(Dungeon.dungeonGrid[Dungeon.Rooms[i].gridRow+directionY][k] == ROCK_HARDNESS && cellDungeon.dungeon[Dungeon.Rooms[i].gridRow+directionY][k].hardness != 255 && cellDungeon.dungeon[Dungeon.Rooms[i].gridRow+directionY][k].hardness != 0){
 			Dungeon.dungeonGrid[Dungeon.Rooms[i].gridRow+directionY][k] = 0;
 			cellDungeon.dungeon[Dungeon.Rooms[i].gridRow+directionY][k].character = '#';
 			cellDungeon.dungeon[Dungeon.Rooms[i].gridRow+directionY][k].hardness = 0;
@@ -447,7 +599,7 @@ for(int i = 0; i < MAX_STAIRS; i++){
 }
     }//
  //declaring char dungeon
-for(int i = 0; i < ROWS; i++){
+/*for(int i = 0; i < ROWS; i++){
     for(int j = 0; j < COLS; j++){
       if(Dungeon.dungeonGrid[i][j] == FLOOR_HARDNESS&&dungeonChar[i][j]!='.'&&dungeonChar[i][j]!='<'&&dungeonChar[i][j]!='>'){
       dungeonChar[i][j] = '#';
@@ -466,9 +618,9 @@ for(int i = 0; i < ROWS; i++){
     		dungeonChar[i][j] = ' ';
     	}
     }
-  }
+  }*/
  //placing player
- dungeonChar[Dungeon.pc.gridRow][Dungeon.pc.gridCol] = Dungeon.pc.playerChar;
+ //dungeonChar[Dungeon.pc.gridRow][Dungeon.pc.gridCol] = Dungeon.pc.playerChar;
  cellDungeon.dungeon[Dungeon.pc.gridRow][Dungeon.pc.gridCol].character = Dungeon.pc.playerChar;
   
  if(argc==2&&strcmp(argv[1],"--save")==0)
@@ -593,9 +745,11 @@ for(int i = 0; i < ROWS; i++){
     }
   //debugprintBoard(&Dungeon);
   //printf("calculated save size: %i\n", 12 + 4 + 4 + 2 + 1680 + 2 + numberOfRooms * 4 + 2 + numberOfUpStairs * 2 + 2 + numberOfDownStairs * 2);
-  printf("DSDADA\n");
-  Dijkstras_nontun(&cellDungeon);
   printBoard(&cellDungeon);
+  Dijkstras_nontun(&cellDungeon);
+  printNonTun(&cellDungeon);
+  Dijkstras_tun(&cellDungeon);
+  printTun(&cellDungeon);
  
 
   return 0;
