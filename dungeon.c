@@ -39,8 +39,8 @@ typedef struct room{
 
 //player character
 typedef struct PC{
-	int8_t gridRow;
-	int8_t gridCol;
+	uint8_t gridRow;
+	uint8_t gridCol;
 	char playerChar;
 
 }PC;
@@ -407,6 +407,8 @@ int main(int argc, char *argv[]){
     //for(int i = 0; i<numberOfDownStairs; i++) {
     //  printf("Loaded downStair index: %i, X: %i, Y: %i\n", i, *(downStairCords + i*2 + 0), *(downStairCords + i*2 + 1));
     //}
+    printf("pc Row %d\n",Dungeon.pc.gridRow);
+    printf("pc Col %d\n",Dungeon.pc.gridCol);
     //debug
     
   fclose(saveFile);
@@ -448,6 +450,8 @@ int main(int argc, char *argv[]){
     cellDungeon.dungeon[*(downStairCords + (i)*2+1)][*(downStairCords + (i)*2)].character = '>';
   }
   
+  cellDungeon.pc.gridRow=Dungeon.pc.gridRow;
+  cellDungeon.pc.gridCol=Dungeon.pc.gridCol;
   }
   //end of load
   else
@@ -717,8 +721,7 @@ for(int i = 0; i < MAX_STAIRS; i++){
   }
   size = 12 + 4 + 4 + 2 + 1680 + 2 + numberOfRooms * 4 + 2 + numberOfUpStairs * 2 + 2 + numberOfDownStairs * 2;
   //printf("save size: %i\n", size); //debug
-
-
+  
   //writing data
   fwrite(name, sizeof(char), 12, saveFile);
   version = htobe32(version);
@@ -742,6 +745,8 @@ for(int i = 0; i < MAX_STAIRS; i++){
   fwrite(downStairCords, sizeof(int8_t), numberOfDownStairs * 2, saveFile);
   fclose(saveFile);
   //end of save
+  printf("pc Row %d\n",Dungeon.pc.gridRow);
+  printf("pc Col %d\n",Dungeon.pc.gridCol);
     }
   //debugprintBoard(&Dungeon);
   //printf("calculated save size: %i\n", 12 + 4 + 4 + 2 + 1680 + 2 + numberOfRooms * 4 + 2 + numberOfUpStairs * 2 + 2 + numberOfDownStairs * 2);
