@@ -328,7 +328,7 @@ int main(int argc, char *argv[]){
     	cellDungeon.dungeon[i][j].character = ' ';
     }
   }
-  Dungeon.pc.playerChar = '@';
+  cellDungeon.pc.playerChar = '@';
   //start of load
   //creating path
   char* home = getenv("HOME");
@@ -374,8 +374,8 @@ int main(int argc, char *argv[]){
     version = be32toh(version);
     fread(&size, sizeof(int), 1, saveFile);
     size = be32toh(size);
-    fread(&Dungeon.pc.gridRow, sizeof(int8_t), 1, saveFile);
-    fread(&Dungeon.pc.gridCol, sizeof(int8_t), 1, saveFile);
+    fread(&cellDungeon.pc.gridRow, sizeof(int8_t), 1, saveFile);
+    fread(&cellDungeon.pc.gridCol, sizeof(int8_t), 1, saveFile);
     fread(hardness, sizeof(int8_t), 1680, saveFile);
     fread(&numberOfRooms, sizeof(int16_t), 1, saveFile);
     numberOfRooms = be16toh(numberOfRooms);
@@ -407,8 +407,8 @@ int main(int argc, char *argv[]){
     //for(int i = 0; i<numberOfDownStairs; i++) {
     //  printf("Loaded downStair index: %i, X: %i, Y: %i\n", i, *(downStairCords + i*2 + 0), *(downStairCords + i*2 + 1));
     //}
-    printf("pc Row %d\n",Dungeon.pc.gridRow);
-    printf("pc Col %d\n",Dungeon.pc.gridCol);
+    //printf("pc Row %d\n",Dungeon.pc.gridRow);
+    //printf("pc Col %d\n",Dungeon.pc.gridCol);
     //debug
     
   fclose(saveFile);
@@ -466,8 +466,8 @@ int main(int argc, char *argv[]){
  srand(time(0));
  //random dimensions for each room in the array
  for(int i = 0; i < MAX_ROOMS; i++){
-	Dungeon.Rooms[i].rows = (rand() % 4) + 4;
-	Dungeon.Rooms[i].cols = (rand() % 4) + 5;
+	cellDungeon.Rooms[i].rows = (rand() % 4) + 4;
+	cellDungeon.Rooms[i].cols = (rand() % 4) + 5;
  }
   //initializing the board to white spaces
   for(int i = 0; i < ROWS; i++){
@@ -503,9 +503,9 @@ int main(int argc, char *argv[]){
 	int randRow = (rand() % 13) + 1;
 	int randCol = (rand() % 70) + 1;
 	//checking if room + border will fit
-	for(int i=-1; i<Dungeon.Rooms[roomsPlaced].rows+1; i++){
-	  for(int j=-1; j<Dungeon.Rooms[roomsPlaced].cols+1; j++){
-	  	if(Dungeon.dungeonGrid[randRow + i][randCol + j] != ROCK_HARDNESS){
+	for(int i=-1; i<cellDungeon.Rooms[roomsPlaced].rows+1; i++){
+	  for(int j=-1; j<cellDungeon.Rooms[roomsPlaced].cols+1; j++){
+	  	if(cellDungeon.dungeonGrid[randRow + i][randCol + j] != ROCK_HARDNESS){
 	  		freeSpace = -1;
 	  		break;
 	  	}
@@ -525,8 +525,8 @@ int main(int argc, char *argv[]){
 	    	  cellDungeon.pc.gridRow = randRow;
 	    	  cellDungeon.pc.gridCol = randCol;
 	    	}
-	    	Dungeon.Rooms[roomsPlaced].gridRow = randRow;
-	    	Dungeon.Rooms[roomsPlaced].gridCol = randCol;
+	    	cellDungeon.Rooms[roomsPlaced].gridRow = randRow;
+	    	cellDungeon.Rooms[roomsPlaced].gridCol = randCol;
 	     	Dungeon.dungeonGrid[randRow + i][randCol + j] = 0;
 	     	cellDungeon.dungeon[randRow + i][randCol + j].hardness = 0;
 	    }
@@ -537,12 +537,12 @@ int main(int argc, char *argv[]){
 //this loops through each room and its neigbor in the array to connect them together with corridors
 for(int i = 0; i < MAX_ROOMS-1;i++){
         //finds the direction in which a room finds its neighboor room
-	int directionY = (Dungeon.Rooms[i+1].gridRow - Dungeon.Rooms[i].gridRow);
-	int directionX = (Dungeon.Rooms[i+1].gridCol - Dungeon.Rooms[i].gridCol);
+	int directionY = (cellDungeon.Rooms[i+1].gridRow - cellDungeon.Rooms[i].gridRow);
+	int directionX = (cellDungeon.Rooms[i+1].gridCol - cellDungeon.Rooms[i].gridCol);
 
 	//Y direction
-	for(int j = Dungeon.Rooms[i].gridRow; j != Dungeon.Rooms[i+1].gridRow; j += (directionY>0) ? 1 : -1){
-		if(Dungeon.dungeonGrid[j][Dungeon.Rooms[i].gridCol] == ROCK_HARDNESS && cellDungeon.dungeon[j][Dungeon.Rooms[i].gridCol].hardness != 255 && cellDungeon.dungeon[j][Dungeon.Rooms[i].gridCol].hardness != 0){
+	for(int j = cellDungeon.Rooms[i].gridRow; j != cellDungeon.Rooms[i+1].gridRow; j += (directionY>0) ? 1 : -1){
+		if(Dungeon.dungeonGrid[j][cellDungeon.Rooms[i].gridCol] == ROCK_HARDNESS && cellDungeon.dungeon[j][cellDungeon.Rooms[i].gridCol].hardness != 255 && cellDungeon.dungeon[j][cellDungeon.Rooms[i].gridCol].hardness != 0){
 			Dungeon.dungeonGrid[j][Dungeon.Rooms[i].gridCol] = 0;
 			cellDungeon.dungeon[j][Dungeon.Rooms[i].gridCol].character = '#';
 			cellDungeon.dungeon[j][Dungeon.Rooms[i].gridCol].hardness = 0;
@@ -550,7 +550,7 @@ for(int i = 0; i < MAX_ROOMS-1;i++){
 	}
 	//X direction
 	for(int k = Dungeon.Rooms[i].gridCol; k != Dungeon.Rooms[i+1].gridCol; k += (directionX>0) ? 1 : -1){
-		if(Dungeon.dungeonGrid[Dungeon.Rooms[i].gridRow+directionY][k] == ROCK_HARDNESS && cellDungeon.dungeon[Dungeon.Rooms[i].gridRow+directionY][k].hardness != 255 && cellDungeon.dungeon[Dungeon.Rooms[i].gridRow+directionY][k].hardness != 0){
+		if(cellDungeon.dungeonGrid[cellDungeon.Rooms[i].gridRow+directionY][k] == ROCK_HARDNESS && cellDungeon.dungeon[cellDungeon.Rooms[i].gridRow+directionY][k].hardness != 255 && cellDungeon.dungeon[cellDungeon.Rooms[i].gridRow+directionY][k].hardness != 0){
 			Dungeon.dungeonGrid[Dungeon.Rooms[i].gridRow+directionY][k] = 0;
 			cellDungeon.dungeon[Dungeon.Rooms[i].gridRow+directionY][k].character = '#';
 			cellDungeon.dungeon[Dungeon.Rooms[i].gridRow+directionY][k].hardness = 0;
@@ -563,9 +563,9 @@ int stairsPlaced = 0;
 while(stairsPlaced < MAX_STAIRS){
 	int randRow = (rand() % 13) + 1;
 	int randCol = (rand() % 70) + 1;
-	if(Dungeon.dungeonGrid[randRow][randCol] == FLOOR_HARDNESS){
-		Dungeon.Stairs[stairsPlaced].gridRow = randRow;
-		Dungeon.Stairs[stairsPlaced].gridCol = randCol;
+	if(cellDungeon.dungeonGrid[randRow][randCol] == FLOOR_HARDNESS){
+		cellDungeon.Stairs[stairsPlaced].gridRow = randRow;
+		cellDungeon.Stairs[stairsPlaced].gridCol = randCol;
 		//will switch between upstairs and downstairs
 		if(stairsPlaced % 2 == 0){
 			Dungeon.Stairs[stairsPlaced++].direction = '<';
@@ -591,7 +591,7 @@ for(int i = 0; i < MAX_ROOMS; i++){
   for(int j = 0; j<Dungeon.Rooms[i].rows;j++){
   	for(int k = 0; k<Dungeon.Rooms[i].cols;k++){
   		dungeonChar[Dungeon.Rooms[i].gridRow+j][Dungeon.Rooms[i].gridCol+k] = '.';
-  		cellDungeon.dungeon[Dungeon.Rooms[i].gridRow+j][Dungeon.Rooms[i].gridCol+k].character = '.';
+  		cellDungeon.dungeon[cellDungeon.Rooms[i].gridRow+j][cellDungeon.Rooms[i].gridCol+k].character = '.';
   	}
   }
 }
@@ -599,7 +599,7 @@ for(int i = 0; i < MAX_ROOMS; i++){
 //placing stairs on char dungeon
 for(int i = 0; i < MAX_STAIRS; i++){
   dungeonChar[Dungeon.Stairs[i].gridRow][Dungeon.Stairs[i].gridCol] = Dungeon.Stairs[i].direction;
-  cellDungeon.dungeon[Dungeon.Stairs[i].gridRow][Dungeon.Stairs[i].gridCol].character = Dungeon.Stairs[i].direction;
+  cellDungeon.dungeon[cellDungeon.Stairs[i].gridRow][cellDungeon.Stairs[i].gridCol].character = cellDungeon.Stairs[i].direction;
 }
     }//
  //declaring char dungeon
@@ -625,7 +625,7 @@ for(int i = 0; i < MAX_STAIRS; i++){
   }*/
  //placing player
  //dungeonChar[Dungeon.pc.gridRow][Dungeon.pc.gridCol] = Dungeon.pc.playerChar;
- cellDungeon.dungeon[Dungeon.pc.gridRow][Dungeon.pc.gridCol].character = Dungeon.pc.playerChar;
+ cellDungeon.dungeon[cellDungeon.pc.gridRow][cellDungeon.pc.gridCol].character = cellDungeon.pc.playerChar;
   
  if(argc==2&&strcmp(argv[1],"--save")==0)
     {
@@ -640,7 +640,7 @@ for(int i = 0; i < MAX_STAIRS; i++){
   //hardness
     for(int i = 0; i<ROWS; i++) {
       for(int j = 0; j<COLS; j++) {
-        hardness[i][j] = Dungeon.dungeonGrid[i][j];
+        hardness[i][j] = cellDungeon.dungeonGrid[i][j];
         
         //debug
 	//printf("Dungeon hardness:%d, Saved hardness: %d\n",Dungeon.dungeonGrid[i][j], hardness[i][j]);// think this converts from int32_t to int8_t
@@ -649,7 +649,7 @@ for(int i = 0; i < MAX_STAIRS; i++){
   }
 
   //rooms
-  numberOfRooms = sizeof(Dungeon.Rooms) / sizeof(room); //hopefully gets length of dungeon rooms array
+  numberOfRooms = sizeof(cellDungeon.Rooms) / sizeof(room); //hopefully gets length of dungeon rooms array
   
   //debug
   //printf("Saved total dungeon rooms: %i\n", numberOfRooms);
@@ -658,10 +658,10 @@ for(int i = 0; i < MAX_STAIRS; i++){
   free(roomCords);
   roomCords = (int8_t*)malloc(sizeof(int8_t*) * numberOfRooms * 4);
   for(int i = 0; i<numberOfRooms; i++) {
-    *(roomCords + i*4 + 1) = Dungeon.Rooms[i].gridRow;
-    *(roomCords + i*4 + 0) = Dungeon.Rooms[i].gridCol;
-    *(roomCords + i*4 + 3) = Dungeon.Rooms[i].rows;
-    *(roomCords + i*4 + 2) = Dungeon.Rooms[i].cols;
+    *(roomCords + i*4 + 1) = cellDungeon.Rooms[i].gridRow;
+    *(roomCords + i*4 + 0) = cellDungeon.Rooms[i].gridCol;
+    *(roomCords + i*4 + 3) = cellDungeon.Rooms[i].rows;
+    *(roomCords + i*4 + 2) = cellDungeon.Rooms[i].cols;
     
     //debug
     //printf("Dungeon room index: %i, X: %i, Y: %i, Rows: %i, Cols: %i\n", i, Dungeon.Rooms[i].gridRow, Dungeon.Rooms[i].gridCol, Dungeon.Rooms[i].rows, Dungeon.Rooms[i].cols);
@@ -673,11 +673,11 @@ for(int i = 0; i < MAX_STAIRS; i++){
   //stairs
   numberOfUpStairs = 0;
   numberOfDownStairs = 0;
-  for(int i = 0; i<sizeof(Dungeon.Stairs) / sizeof(stairs); i++) { //hopefully gets length of dungeon stairs array
-    if(Dungeon.Stairs[i].direction != '\0') {
-      if(Dungeon.Stairs[i].direction == '<') {
+  for(int i = 0; i<sizeof(cellDungeon.Stairs) / sizeof(stairs); i++) { //hopefully gets length of dungeon stairs array
+    if(cellDungeon.Stairs[i].direction != '\0') {
+      if(cellDungeon.Stairs[i].direction == '<') {
         numberOfUpStairs ++;
-      } else if(Dungeon.Stairs[i].direction == '>') {
+      } else if(cellDungeon.Stairs[i].direction == '>') {
         numberOfDownStairs ++;
       }
     }
@@ -694,11 +694,11 @@ for(int i = 0; i < MAX_STAIRS; i++){
   downStairCords = (int8_t*)malloc(sizeof(int8_t*) * numberOfDownStairs * 2);
   int a=0;
   int b=0;
-  for(int i = 0; i<sizeof(Dungeon.Stairs) / sizeof(stairs); i++) {
-    if(Dungeon.Stairs[i].direction != '\0') {
-      if(Dungeon.Stairs[i].direction == '<') {
-        *(upStairCords + a*2 + 1) = Dungeon.Stairs[i].gridRow;
-        *(upStairCords + a*2 + 0) = Dungeon.Stairs[i].gridCol;
+  for(int i = 0; i<sizeof(cellDungeon.Stairs) / sizeof(stairs); i++) {
+    if(cellDungeon.Stairs[i].direction != '\0') {
+      if(cellDungeon.Stairs[i].direction == '<') {
+        *(upStairCords + a*2 + 1) = cellDungeon.Stairs[i].gridRow;
+        *(upStairCords + a*2 + 0) = cellDungeon.Stairs[i].gridCol;
         
 	//debug
         //printf("Dungeon upStair index: %i, X: %i, Y: %i\n", i, Dungeon.Stairs[i].gridRow, Dungeon.Stairs[i].gridCol);
@@ -706,9 +706,9 @@ for(int i = 0; i < MAX_STAIRS; i++){
         //debug
         
         a++;
-      } else if(Dungeon.Stairs[i].direction == '>') {
-        *(downStairCords + b*2 + 1) = Dungeon.Stairs[i].gridRow;
-        *(downStairCords + b*2 + 0) = Dungeon.Stairs[i].gridCol;
+      } else if(cellDungeon.Stairs[i].direction == '>') {
+        *(downStairCords + b*2 + 1) = cellDungeon.Stairs[i].gridRow;
+        *(downStairCords + b*2 + 0) = cellDungeon.Stairs[i].gridCol;
         
 	//debug
         //printf("Dungeon downStair index: %i, X: %i, Y: %i\n", i, Dungeon.Stairs[i].gridRow, Dungeon.Stairs[i].gridCol);
@@ -728,8 +728,8 @@ for(int i = 0; i < MAX_STAIRS; i++){
   fwrite(&version, sizeof(int), 1, saveFile);
   size = htobe32(size);
   fwrite(&size, sizeof(int), 1, saveFile); //todo
-  fwrite(&Dungeon.pc.gridRow, sizeof(int8_t), 1, saveFile);
-  fwrite(&Dungeon.pc.gridCol, sizeof(int8_t), 1, saveFile);
+  fwrite(&cellDungeon.pc.gridRow, sizeof(int8_t), 1, saveFile);
+  fwrite(&cellDungeon.pc.gridCol, sizeof(int8_t), 1, saveFile);
   fwrite(hardness, sizeof(int8_t), 1680, saveFile);
   numberOfRooms = htobe16(numberOfRooms);
   fwrite(&numberOfRooms, sizeof(int16_t), 1, saveFile);
@@ -745,8 +745,8 @@ for(int i = 0; i < MAX_STAIRS; i++){
   fwrite(downStairCords, sizeof(int8_t), numberOfDownStairs * 2, saveFile);
   fclose(saveFile);
   //end of save
-  printf("pc Row %d\n",Dungeon.pc.gridRow);
-  printf("pc Col %d\n",Dungeon.pc.gridCol);
+  //printf("pc Row %d\n",Dungeon.pc.gridRow);
+  //printf("pc Col %d\n",Dungeon.pc.gridCol);
     }
   //debugprintBoard(&Dungeon);
   //printf("calculated save size: %i\n", 12 + 4 + 4 + 2 + 1680 + 2 + numberOfRooms * 4 + 2 + numberOfUpStairs * 2 + 2 + numberOfDownStairs * 2);
