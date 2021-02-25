@@ -1,9 +1,6 @@
 Emmauel Paz epaz@iastate.edu
 Caden Michael Last clast@iastate.edu
 Jack Dennis Kennedy jackkenn@iastate.edu
-Assignment 1.02
+Assignment 1.03
 
-  Our task was to read in or save binary data through a structured binary file to reconstruct a dungeon with said binary data. There are two command-line arguments 
-that can flag if the program will save and or load a dungeon. All integer data will be read in with specific byte sizes and converted from big-endian to host. Data written 
-to file will have a similar process where it will be converted from host to big-endian. The hardness will be used to generate the border and the open spaces. Then rooms
-and stairs will be added last overriding the corridors.
+  Our task was to make a pathfinding algorithm to be able to tell which direction monsters would have to go to get to the player the fastest. We used Dijkstra's algorithm to do this. We made 2 different versions for this. One was tunnelling, which allowed the monsters to go through the walls with weighted options based on the hardness. The other one was just made for the monsters to go through the hallways.

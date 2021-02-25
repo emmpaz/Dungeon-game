@@ -15,3 +15,15 @@
 02/18/2021 5:00 JDK: Fixed unsigned ints and couple other bugs and made README.
 
 02/18/2021 7:00 CML: Fixed the rest of loading a dungeon from a file and Changelog.
+
+02/21/2021 ?:?? EP: Created a cell struct that has all needed variables in it.
+
+02/22/2021 ?:?? EP: Made Dijsktra's algotirm work for tunneling monsters.
+
+02/22/2021 ?:?? EP: Made Dijkstra's algorithm work for non-tunnelling monsters.
+
+02/24/2021 6:00 CML, EP: Converted all variables to the cell struct for easier use.
+
+02/24/2021 8:00 JDK: Switched the rows and columns on read in because it was causing problems.
+
+02/25/2021 11:00 CML: Updated Changelog and README.
