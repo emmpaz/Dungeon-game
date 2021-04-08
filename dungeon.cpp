@@ -1869,7 +1869,7 @@ int main(int argc, char *argv[]){
    cellDungeon.numOfCharacters = numofmonsters + 1;
 	//initializing the dungeon
   parse_descriptions(&cellDungeon); //this hoe work
-
+  getMonstDescrip(cellDungeon.monsDes); //THIS LINE IS STUPIDBFGJSKLABDFLJKASBFLA
   init_dungeon(&cellDungeon); // i confusion
  	heap_t moveQueue = movePrioQueueInit(&cellDungeon); //stores when characters will move
   game_loop(&cellDungeon, &moveQueue); //the actual game
