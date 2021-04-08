@@ -1,0 +1,65 @@
+02/09/2021 2:00 EP: Started working on making the dungeon board and having borders.
+
+02/09/2021 3:00 EP, CML: Spawned rooms in random locations on the board.
+
+02/10/2021 7:00 EP, CML: Added corridors that connected every room and added stairs.
+
+02/11/2021 3:10 EP, JDK: Made README, CHANGELOG and Makefile for turn in purposes.
+
+02/16/2021 ?:?? EP: Implemented hardness and added player struct.
+
+02/16/2021 ?:?? JDK: Implemented read and write from flies.
+
+02/17/2021 ?:?? CML: Almost made the loading a dungeon work.
+
+02/18/2021 5:00 JDK: Fixed unsigned ints and couple other bugs and made README.
+
+02/18/2021 7:00 CML: Fixed the rest of loading a dungeon from a file and Changelog.
+
+02/21/2021 ?:?? EP: Created a cell struct that has all needed variables in it.
+
+02/22/2021 ?:?? EP: Made Dijsktra's algotirm work for tunneling monsters.
+
+02/22/2021 ?:?? EP: Made Dijkstra's algorithm work for non-tunnelling monsters.
+
+02/24/2021 6:00 CML, EP: Converted all variables to the cell struct for easier use.
+
+02/24/2021 8:00 JDK: Switched the rows and columns on read in because it was causing problems.
+
+02/25/2021 11:00 CML: Updated Changelog and README.
+
+03/01/2021 7:30 EP: Created character struct. Addded character comparator. Heap test function.
+
+03/02/2021 3:00	EP: Created function to tell if pc was visible to monster
+
+03/02/2021 ?:?? CML: fixed struct and started move function
+
+03/03/2021 ?:?? CML: finished intelligent guys
+
+03/04/2021 ?:?? JDK: created priority queue for moving characters
+
+03/04/2021 ?:?? JDK, CML: fixed some bugs
+
+03/04/2021 ?:?? CML: fixed monster movement
+
+03/08/2021 ?:?? EP: Added PC controls
+
+03/09/2021 ?:?? EP, CML: Added list Scrolling and fixed bugs
+
+03/10/2021 ?:?? EP: Added final bug Fixes
+
+03/11/2021 ?:?? JDK: Updated README and CHANGELOG
+
+03/22/2021 ?:?? CML: Changed code from .c to .cpp
+
+03/23/2021 ?:?? EP: Fixed the makefile to work with cpp and added teleport
+
+03/24/2021 ?:?? JDK: Added fog of war
+
+03/25/2021 1:00 CML: Added toggle functoinaliy to fog of war, fixed a few bugs, updated README and changelog
+
+03/29/2021 3:00 EP: added function for scanning and printing
+
+03/30/2021 8:00 EP: updated code and still need to fix int problem
+
+03/31/2021 4:00 EP: finished everything
