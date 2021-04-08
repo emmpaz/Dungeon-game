@@ -96,7 +96,7 @@ void monster_factory(dungeon *d, int index){
   std::uniform_int_distribution<int> mon(0, d->monsDes.size()-1);
   std::uniform_int_distribution<int> rrty(0, 99);
   int randMon;
-  while(1){
+  while(1) {
     randMon = mon(mt);
     if(!d->monsDes[randMon].placed || !(d->monsDes[randMon].abilBits && (1 << 7))){
       int rarity = rrty(mt);
@@ -104,8 +104,10 @@ void monster_factory(dungeon *d, int index){
         break;
     }
   }
+  printf("done");
   //monsters won't have names
-  (d->characters + index)->colorBits = d->monsDes[randMon].colorBits;
+  (d->characters + index)->dead = 0;
+  (d->characters + index)->colorBits.push_back(d->monsDes[randMon].colorBits[0]);
   (d->characters + index)->speed = d->monsDes[randMon].speedtest.roll();
   (d->characters + index)->type = d->monsDes[randMon].abilBits;
   (d->characters + index)->hitpoints = d->monsDes[randMon].hitpoints.roll();
@@ -199,6 +201,7 @@ void init_dungeon(dungeon *d){
 	    	  (d->characters)->typeofChar = '@';
 	    	  (d->characters)->speed = PC_SPEED;
 	    	  (d->characters)->sequenceNum = 0;
+			  (d->characters)->colorBits.push_back(PC_COLOR);
 	    	}
 	     	//dungeonGrid[randRow + i][randCol + j] = 0;
 	     	d->dungeon[randRow + i][randCol + j].hardness = FLOOR_HARDNESS;
@@ -232,7 +235,6 @@ for(int i = 0; i < MAX_ROOMS-1;i++){
 }
 //this loop will place stairs randomly on the map but making sure it is on a floor
     int stairsPlaced = 0;
-
       while(stairsPlaced < MAX_STAIRS){
 	  int randRow = (rand() % 13) + 1;
 	  int randCol = (rand() % 70) + 1;
@@ -263,20 +265,20 @@ for(int i = 0; i < MAX_ROOMS-1;i++){
     //get ranges set (inclusive)
     std::uniform_int_distribution<int> row(1, 13);
     std::uniform_int_distribution<int> col(1, 70);
-    while(monstersPlaced < d->numOfCharacters){
+    while(monstersPlaced < d->numOfCharacters){ //gets stuck in this loop
     int randRow = row(mt);
 	  int randCol = col(mt);
     if(d->dungeon[randRow][randCol].hardness == FLOOR_HARDNESS && randRow != d->pc.gridRow && randCol != d->pc.gridCol){
        	 	//finds a random type and speed for monster
        	 	//declaring the monster inside of the character array starting at index 1
          monster_factory(d, monstersPlaced + 1);
+		 (d->characters + monstersPlaced + 1)->gridRow = randRow;
+		 (d->characters + monstersPlaced + 1)->gridCol = randCol;
        	 	//prints to a hexa decimal, hard-coded
        	 	monstersPlaced++;
        	 }
+		printf("monstersPlaced: %d, numOfCharacters: %d\n", monstersPlaced, d->numOfCharacters);
     }
-
-
-
 }
 //prints board for nontunnelers
 void printNonTun(dungeon *d){
@@ -322,6 +324,7 @@ void printBoard(dungeon *d) {
 	for(int j = 0; j < COLS; j++) {
 		board.board[i][j] = '\0';
 		board.bold[i][j] = false;
+		board.color[i][j] = 7;
 	}
   }
 
@@ -339,7 +342,15 @@ void printBoard(dungeon *d) {
 						d->revelaedBoard[row][col] = seen;
 						//board.board[row][col] = seen; //no remembering
 						board.bold[row][col] = true;
-						for(int k = 0; k < d->numOfCharacters; k++) { //adding chacacters if they are in seen location
+    					for(std::vector<Object>::iterator it = d->objects.begin(); it != d->objects.end(); ++it) { //adding items if they are in seen location
+							if(it->gridRow == row && it->gridCol == col) {
+								board.board[it->gridRow][it->gridCol] = it->symbol;
+								board.color[it->gridRow][it->gridCol] = it->color;
+								board.bold[row][col] = false;
+								break;
+							}
+    					}
+						for(int k = 0; k < d->numOfCharacters; k++) { //adding monsters if they are in seen location
 							if((d->characters+k)->dead!=1 && (d->characters+k)->gridRow == row && (d->characters+k)->gridCol == col) {
 								board.board[row][col] = (d->characters+k)->typeofChar;
 								board.bold[row][col] = false;
@@ -378,7 +389,15 @@ void printBoard(dungeon *d) {
 							d->revelaedBoard[row][col] = seen;
 							//board.board[row][col] = seen; //no remembering
 							board.bold[row][col] = true;
-							for(int k = 0; k < d->numOfCharacters; k++) { //adding chacacters if they are in seen location
+    						for(std::vector<Object>::iterator it = d->objects.begin(); it != d->objects.end(); ++it) { //adding items if they are in seen location
+								if(it->gridRow == row && it->gridCol == col) {
+									board.board[it->gridRow][it->gridCol] = it->symbol;
+									board.color[it->gridRow][it->gridCol] = it->color;
+									board.bold[row][col] = false;
+									break;
+								}
+    						}
+							for(int k = 0; k < d->numOfCharacters; k++) { //adding monsters if they are in seen location
 								if((d->characters+k)->dead!=1 && (d->characters+k)->gridRow == row && (d->characters+k)->gridCol == col) {
 									board.board[row][col] = (d->characters+k)->typeofChar;
 									board.bold[row][col] = false;
@@ -408,12 +427,14 @@ void printBoard(dungeon *d) {
 				board.board[i][j] = d->dungeon[i][j].character;
 			}
 		}
-    for(std::vector<Object>::iterator it = d->objects.begin(); it != d->objects.end(); ++it){
-      board.board[it->gridRow][it->gridCol] = it->symbol;
-    }
+    	for(std::vector<Object>::iterator it = d->objects.begin(); it != d->objects.end(); ++it){
+      		board.board[it->gridRow][it->gridCol] = it->symbol;
+			board.color[it->gridRow][it->gridCol] = it->color;
+    	}
 		for(int i = 0; i < d->numOfCharacters; i++) { // replacing terrain with characters
 			if((d->characters+i)->dead!=1) {
 				board.board[(d->characters+i)->gridRow][(d->characters+i)->gridCol] = (d->characters+i)->typeofChar;
+				board.color[(d->characters+i)->gridRow][(d->characters+i)->gridCol] = (d->characters+i)->colorBits[0];
 			}
 		}
   }
@@ -429,7 +450,8 @@ void printBoard(dungeon *d) {
           break;
         }
       }*/ //this is not working
-      mvaddch(i+1, j, board.board[i][j]);
+	  	attron(COLOR_PAIR(board.color[i][j]));
+      	mvaddch(i+1, j, board.board[i][j]);
 	  }
   }
 }
@@ -1837,8 +1859,10 @@ void getMonstDescrip(std::vector<MonsterDescription> &v){
 						break;
 					}
 				}
-				if(success)
+				if(success){
+					currentMon.placed = 0;
 					v.push_back(currentMon);
+				}
 			}
 		}
 	monsterFile.close();
@@ -1857,7 +1881,6 @@ int main(int argc, char *argv[]){
   }
   cellDungeon.pc.playerChar = '@';
   cellDungeon.turn = 0;
-
   //will default to 10 if no switch
   numofmonsters = MAX_MONSTERS;
   if(argc>1 && strcmp(argv[1], "--nummon")==0){
@@ -1871,11 +1894,10 @@ int main(int argc, char *argv[]){
   parse_descriptions(&cellDungeon); //this hoe work
   getMonstDescrip(cellDungeon.monsDes); //THIS LINE IS STUPIDBFGJSKLABDFLJKASBFL
   init_dungeon(&cellDungeon); // i confusion
- 	heap_t moveQueue = movePrioQueueInit(&cellDungeon); //stores when characters will move
+  printf("past init_dungeon \n");
+  heap_t moveQueue = movePrioQueueInit(&cellDungeon); //stores when characters will move
   game_loop(&cellDungeon, &moveQueue); //the actual game
   free(cellDungeon.characters); //freeing the memory
-
-
-
+  
   return 0;
 }

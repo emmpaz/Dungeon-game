@@ -21,6 +21,7 @@
 #define PC_SPEED 10
 #define VEIW_RADIUS 2
 #define MAX_OBJECTS 10
+#define PC_COLOR 7
 
 
 class MonsterDescription{
@@ -144,6 +145,7 @@ class BoldBoard {
 	public:
 		char board[ROWS][COLS];
 		bool bold[ROWS][COLS];
+		int color[ROWS][COLS];
 };
 
 #endif
