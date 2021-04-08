@@ -104,7 +104,6 @@ void monster_factory(dungeon *d, int index){
         break;
     }
   }
-  printf("done");
   //monsters won't have names
   (d->characters + index)->dead = 0;
   (d->characters + index)->colorBits.push_back(d->monsDes[randMon].colorBits[0]);
@@ -277,7 +276,6 @@ for(int i = 0; i < MAX_ROOMS-1;i++){
        	 	//prints to a hexa decimal, hard-coded
        	 	monstersPlaced++;
        	 }
-		printf("monstersPlaced: %d, numOfCharacters: %d\n", monstersPlaced, d->numOfCharacters);
     }
 }
 //prints board for nontunnelers
@@ -353,6 +351,7 @@ void printBoard(dungeon *d) {
 						for(int k = 0; k < d->numOfCharacters; k++) { //adding monsters if they are in seen location
 							if((d->characters+k)->dead!=1 && (d->characters+k)->gridRow == row && (d->characters+k)->gridCol == col) {
 								board.board[row][col] = (d->characters+k)->typeofChar;
+								board.color[row][col] = (d->characters+k)->colorBits[0];
 								board.bold[row][col] = false;
 								break;
 							}
@@ -400,6 +399,7 @@ void printBoard(dungeon *d) {
 							for(int k = 0; k < d->numOfCharacters; k++) { //adding monsters if they are in seen location
 								if((d->characters+k)->dead!=1 && (d->characters+k)->gridRow == row && (d->characters+k)->gridCol == col) {
 									board.board[row][col] = (d->characters+k)->typeofChar;
+									board.color[row][col] = (d->characters+k)->colorBits[0];
 									board.bold[row][col] = false;
 									break;
 								}
@@ -1894,7 +1894,6 @@ int main(int argc, char *argv[]){
   parse_descriptions(&cellDungeon); //this hoe work
   getMonstDescrip(cellDungeon.monsDes); //THIS LINE IS STUPIDBFGJSKLABDFLJKASBFL
   init_dungeon(&cellDungeon); // i confusion
-  printf("past init_dungeon \n");
   heap_t moveQueue = movePrioQueueInit(&cellDungeon); //stores when characters will move
   game_loop(&cellDungeon, &moveQueue); //the actual game
   free(cellDungeon.characters); //freeing the memory
