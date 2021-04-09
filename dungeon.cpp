@@ -1694,9 +1694,18 @@ void game_loop(dungeon *d, heap_t *h){
   init_pair(COLOR_YELLOW, COLOR_YELLOW, COLOR_BLACK);
 	while((d->characters)->dead != 1 && d->monstersAlive > 0){
 		nextTurn(d, h);
+			for(int j=0; j<d->monsDes.size(); j++)
+			{
+			if(((d->characters+j)->type & 1<<8)&& (d->characters+j)->dead == 1)
+			{
+			print_win();
+			}
+		}
 	}
 	if((d->characters)->dead == 1)
+		{
 		print_dead();
+		}
 	else if(d->monstersAlive <= 0)
 		print_win();
 	endwin();
