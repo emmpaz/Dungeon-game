@@ -111,7 +111,6 @@ public:
 	int nextTurn;
 	int sequenceNum;
 	heap_node_t *hn;
-	Object inventory[20];
 };
 
 //struct for stairs to store where placed on grid
@@ -131,6 +130,7 @@ public:
 	stairs Stairs[MAX_STAIRS];
 	Character *characters;
 	PC pc;
+	Object pcInv[20];
 	char revelaedBoard[ROWS][COLS];
 	int turn;
 	int numOfCharacters;
