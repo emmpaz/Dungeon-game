@@ -1888,6 +1888,7 @@ int main(int argc, char *argv[]){
     }
 
   }
+  cellDungeon.pc.damage = new dice();
   cellDungeon.pc.playerChar = '@';
   cellDungeon.turn = 0;
   //will default to 10 if no switch
