@@ -76,6 +76,7 @@ void object_factory(dungeon *d){
     newObj.rarity = d->object_descriptions[randObj].get_rarity();
     newObj.artifact = d->object_descriptions[randObj].get_artifact();
     newObj.symbol = object_symbol[newObj.type];
+	newObj.pickedUp = false;
     while(1){
       newObj.gridRow = row(mt);
     	newObj.gridCol = col(mt);
@@ -341,7 +342,7 @@ void printBoard(dungeon *d) {
 						//board.board[row][col] = seen; //no remembering
 						board.bold[row][col] = true;
     					for(std::vector<Object>::iterator it = d->objects.begin(); it != d->objects.end(); ++it) { //adding items if they are in seen location
-							if(it->gridRow == row && it->gridCol == col) {
+							if(it->gridRow == row && it->gridCol == col && !it->pickedUp) {
 								board.board[it->gridRow][it->gridCol] = it->symbol;
 								board.color[it->gridRow][it->gridCol] = it->color;
 								board.bold[row][col] = false;
@@ -389,7 +390,7 @@ void printBoard(dungeon *d) {
 							//board.board[row][col] = seen; //no remembering
 							board.bold[row][col] = true;
     						for(std::vector<Object>::iterator it = d->objects.begin(); it != d->objects.end(); ++it) { //adding items if they are in seen location
-								if(it->gridRow == row && it->gridCol == col) {
+								if(it->gridRow == row && it->gridCol == col && !it->pickedUp) {
 									board.board[it->gridRow][it->gridCol] = it->symbol;
 									board.color[it->gridRow][it->gridCol] = it->color;
 									board.bold[row][col] = false;
@@ -424,12 +425,15 @@ void printBoard(dungeon *d) {
   } else {
 		for(int i = 0; i < ROWS; i++){ //copy terrain
 			for(int j = 0; j < COLS; j++){
-				board.board[i][j] = d->dungeon[i][j].character;
 			}
 		}
     	for(std::vector<Object>::iterator it = d->objects.begin(); it != d->objects.end(); ++it){
-      		board.board[it->gridRow][it->gridCol] = it->symbol;
+			/*if(!it->pickedUp) {
+				board.color[it->gridRow][it->gridCol] = it->color;
+				board.board[it->gridRow][it->gridCol] = it->symbol;
+			}*/
 			board.color[it->gridRow][it->gridCol] = it->color;
+			board.board[it->gridRow][it->gridCol] = it->symbol;
     	}
 		for(int i = 0; i < d->numOfCharacters; i++) { // replacing terrain with characters
 			if((d->characters+i)->dead!=1) {
@@ -645,6 +649,22 @@ void teleport(dungeon *d){
 	}
 }
 
+void pcPickUp(dungeon *d) {
+	for(std::vector<Object>::iterator it = d->objects.begin(); it != d->objects.end(); ++it) {
+		if(it->gridRow == d->pc.gridRow && it->gridCol == d->pc.gridCol && !it->pickedUp) {
+			for(int i=12; i<20; i++) {
+				if(d->pc.inventory[i].name == "Empty") {
+					d->pc.inventory[i] = *it;
+					it->pickedUp == true;
+					break;
+				}
+			}
+			mvprintw(0, 1, "inventory full");
+			break;
+		}
+	}
+}
+
 int pc_move(dungeon *d){
 	printBoard(d);
 	int move = getch();
@@ -738,6 +758,9 @@ int pc_move(dungeon *d){
 	d->pc.gridCol+=xDirection;
 	(d->characters)->gridRow+=yDirection;
 	(d->characters)->gridCol+=xDirection;
+
+	//pcPickUp(d);
+
 	for(int i = 1; i < d->numOfCharacters; i++){
 	  if(d->pc.gridRow == (d->characters+i)->gridRow && d->pc.gridCol == (d->characters+i)->gridCol){
 		  	(d->characters+i)->dead=1;
@@ -1627,7 +1650,7 @@ void monster_move(Character *m, dungeon *dungeon){
 
 int nextTurn(dungeon *d, heap_t *h) {
   Character *c = (Character*)heap_peek_min(h);
-	if(c->nextTurn <= d->turn&&c->dead!=1) { //if a charactor has a turn on the current turn, assuming datum not Pointer
+	if(c->nextTurn <= d->turn&&c->dead!=1) { //if a charactor has a turn on the current turn
 	if(c->typeofChar != '@') {
 		monster_move(c, d);
 		for(int i=0; i<d->numOfCharacters; i++)
@@ -1879,7 +1902,7 @@ void getMonstDescrip(std::vector<MonsterDescription> &v){
 
 int main(int argc, char *argv[]){
 	dungeon cellDungeon;
-  int numofmonsters;
+	int numofmonsters;
   //intializing cell dungeon positions
   for(int i = 0; i < ROWS; i++){
     for(int j = 0; j < COLS; j++){
@@ -1900,6 +1923,11 @@ int main(int argc, char *argv[]){
 	//first character will always be the PC followed by the monsters
    cellDungeon.numOfCharacters = numofmonsters + 1;
 	//initializing the dungeon
+	  for(int i = 0; i<20; i++) {
+	  Object empty;
+	  empty.name = "Empty";
+	  cellDungeon.pc.inventory[i] = empty;
+  }
   parse_descriptions(&cellDungeon); //this hoe work
   getMonstDescrip(cellDungeon.monsDes); //THIS LINE IS STUPIDBFGJSKLABDFLJKASBFL
   init_dungeon(&cellDungeon); // i confusion

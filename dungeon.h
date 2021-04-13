@@ -111,7 +111,7 @@ public:
 	int nextTurn;
 	int sequenceNum;
 	heap_node_t *hn;
-
+	Object inventory[20];
 };
 
 //struct for stairs to store where placed on grid
