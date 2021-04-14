@@ -567,7 +567,7 @@ uint32_t parse_descriptions(dungeon *d)
   std::string file;
   std::ifstream f;
   uint32_t retval;
-  printf("%d good?\n", d->monsDes.capacity()); ////debug
+  //printf("%d good?\n", d->monsDes.capacity()); ////debug
   retval = 0;
 
   file = getenv("HOME");

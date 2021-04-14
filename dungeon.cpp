@@ -131,6 +131,25 @@ void monster_factory(dungeon *d, int index)
 //initializing board
 void init_dungeon(dungeon *d)
 {
+	for (int i = 0; i < PC_INVENTORY_SIZE; i++)
+	{
+		Object empty;
+		empty.name = "Empty";
+		d->pcInv.push_back(empty);
+	}
+	d->pcInv.at(0).type = objtype_no_type;
+	d->pcInv.at(1).type = objtype_WEAPON;
+	d->pcInv.at(2).type = objtype_OFFHAND;
+	d->pcInv.at(3).type = objtype_RANGED;
+	d->pcInv.at(4).type = objtype_LIGHT;
+	d->pcInv.at(5).type = objtype_ARMOR;
+	d->pcInv.at(6).type = objtype_HELMET;
+	d->pcInv.at(7).type = objtype_CLOAK;
+	d->pcInv.at(8).type = objtype_GLOVES;
+	d->pcInv.at(9).type = objtype_BOOTS;
+	d->pcInv.at(10).type = objtype_AMULET;
+	d->pcInv.at(11).type = objtype_RING;
+
 	d->fullDungeon = true;
 	for (int i = 0; i < ROWS; i++)
 	{
@@ -634,66 +653,176 @@ int pc_visible(dungeon *d, Character *p)
 	return -1;
 }
 
-void displayInventory(dungeon *d, WINDOW *win)
+void displayEquipment(dungeon *d, WINDOW *win);
+
+void displayInventory(dungeon *d, WINDOW *win, int start, int end);
 {
 	keypad(win, TRUE);
 	int start = PC_EQUIPMENT_SLOTS;
-	int end = (PC_INVENTORY_SIZE - PC_EQUIPMENT_SLOTS <= 24) ? PC_INVENTORY_SIZE - PC_EQUIPMENT_SLOTS : 24;
+	int end = PC_EQUIPMENT_SLOTS + 24 < PC_INVENTORY_SIZE ? PC_EQUIPMENT_SLOTS + 24 : PC_INVENTORY_SIZE;
+	int cursor = PC_EQUIPMENT_SLOTS;
 	for (int i = PC_EQUIPMENT_SLOTS; i < end; i++)
 	{
-		if (d->pcInv.at(i).name != "Empty")
+		for (int j = 0; j < d->pcInv.at(i).name.length(); j++)
 		{
-			wprintw(win, "%s ", d->pcInv.at(i).name);
-			wprintw(win, "\n");
+			i == cursor ? wattron(win, A_BOLD) : wattroff(win, A_BOLD);
+			wprintw(win, "%c", d->pcInv.at(i).name[j]);
 		}
+		wprintw(win, "\n");
 	}
-	mvwprintw(win, 5, 50, "press esc to go back to map");
+	wattroff(win, A_BOLD);
 	while (1)
 	{
 		int option = wgetch(win);
-		if (option == 27)
+		bool flag = false;
+		if (option == 27 || option == 'Q' || option == 'i')
 		{
+			break;
+		}
+		else if (option == 'e')
+		{
+			WINDOW *win = newwin(24, 80, 0, 0);
+			displayEquipment(d, win);
+			erase();
 			break;
 		}
 		else if (option == KEY_DOWN)
 		{
 			werase(win);
-			if (end < PC_INVENTORY_SIZE)
+			flag = true;
+			if (cursor + 1 >= end)
 			{
-				start++;
-				end++;
-			}
-			else
-			{
+				if (end + 1 < PC_INVENTORY_SIZE)
 				{
-					start = (PC_INVENTORY_SIZE - 24 <= PC_EQUIPMENT_SLOTS) ? PC_EQUIPMENT_SLOTS : PC_INVENTORY_SIZE - 24;
+					start++;
+					end++;
+				}
+				else
+				{
 					end = PC_INVENTORY_SIZE;
+					end - 24 > PC_EQUIPMENT_SLOTS ? start = end - 24 : start = PC_EQUIPMENT_SLOTS;
 				}
 			}
+			cursor + 1 < end ? cursor++ : cursor = end - 1;
 		}
 		else if (option == KEY_UP)
 		{
 			werase(win);
-			if (end > PC_EQUIPMENT_SLOTS)
+			flag = true;
+			if (cursor <= start)
 			{
-				start--;
-				end--;
+				if (start > PC_EQUIPMENT_SLOTS)
+				{
+					start--;
+					end--;
+				}
+				else
+				{
+					start = PC_EQUIPMENT_SLOTS;
+					start + 24 < PC_INVENTORY_SIZE ? end = start + 24 : end = PC_INVENTORY_SIZE;
+				}
 			}
-			else
-			{
-				start = PC_EQUIPMENT_SLOTS;
-				end = (PC_INVENTORY_SIZE - PC_EQUIPMENT_SLOTS <= 24) ? PC_INVENTORY_SIZE - PC_EQUIPMENT_SLOTS : 24;
-			}
+			cursor - 1 >= start ? cursor-- : cursor == start;
 		}
-		for (int i = start; i < end; i++)
+		if (flag)
 		{
-			if (d->pcInv.at(i).name != "Empty")
+			for (int i = start; i < end; i++)
 			{
-				wprintw(win, "%s", d->pcInv.at(i).name);
+				for (int j = 0; j < d->pcInv.at(i).name.length(); j++)
+				{
+					i == cursor ? wattron(win, A_BOLD) : wattroff(win, A_BOLD);
+					wprintw(win, "%c", d->pcInv.at(i).name[j]);
+				}
 				wprintw(win, "\n");
 			}
+			wattroff(win, A_BOLD);
 		}
-		mvwprintw(win, 5, 50, "press esc to go back to map");
+	}
+	delwin(win);
+}
+
+void displayEquipment(dungeon *d, WINDOW *win)
+{
+	keypad(win, TRUE);
+	int start = 0;
+	int end = 24 < PC_EQUIPMENT_SLOTS ? 24 : PC_EQUIPMENT_SLOTS;
+	int cursor = 0;
+	for (int i = 0; i < end; i++)
+	{
+		for (int j = 0; j < d->pcInv.at(i).name.length(); j++)
+		{
+			i == cursor ? wattron(win, A_BOLD) : wattroff(win, A_BOLD);
+			wprintw(win, "%c", d->pcInv.at(i).name[j]);
+		}
+		wprintw(win, "\n");
+	}
+	wattroff(win, A_BOLD);
+	while (1)
+	{
+		int option = wgetch(win);
+		bool flag = false;
+		if (option == 27 || option == 'Q' || option == 'e')
+		{
+			break;
+		}
+		else if (option == 'i')
+		{
+			WINDOW *win = newwin(24, 80, 0, 0);
+			displayInventory(d, win);
+			erase();
+			break;
+		}
+		else if (option == KEY_DOWN)
+		{
+			werase(win);
+			flag = true;
+			if (cursor + 1 >= end)
+			{
+				if (end + 1 < PC_EQUIPMENT_SLOTS)
+				{
+					start++;
+					end++;
+				}
+				else
+				{
+					end = PC_EQUIPMENT_SLOTS;
+					end - 24 > 0 ? start = end - 24 : start = 0;
+				}
+			}
+			cursor + 1 < end ? cursor++ : cursor = end - 1;
+		}
+		else if (option == KEY_UP)
+		{
+			werase(win);
+			flag = true;
+			if (cursor <= start)
+			{
+				if (start > 0)
+				{
+					start--;
+					end--;
+				}
+				else
+				{
+					start = 0;
+					start + 24 < PC_EQUIPMENT_SLOTS ? end = start + 24 : end = PC_EQUIPMENT_SLOTS;
+				}
+			}
+			cursor - 1 >= start ? cursor-- : cursor == start;
+		}
+		if (flag)
+		{
+			for (int i = start; i < end; i++)
+			{
+				for (int j = 0; j < d->pcInv.at(i).name.length(); j++)
+				{
+					i == cursor ? wattron(win, A_BOLD) : wattroff(win, A_BOLD);
+					wprintw(win, "%c", d->pcInv.at(i).name[j]);
+				}
+				wprintw(win, "\n");
+			}
+			wattroff(win, A_BOLD);
+		}
 	}
 	delwin(win);
 }
@@ -938,6 +1067,13 @@ int pc_move(dungeon *d)
 	{
 		WINDOW *win = newwin(24, 80, 0, 0);
 		displayInventory(d, win);
+		erase();
+		return 0;
+	}
+	else if (move == 'e')
+	{
+		WINDOW *win = newwin(24, 80, 0, 0);
+		displayEquipment(d, win);
 		erase();
 		return 0;
 	}
@@ -2220,13 +2356,6 @@ int main(int argc, char *argv[])
 {
 	dungeon cellDungeon;
 	int numofmonsters;
-	for (int i = 0; i < PC_INVENTORY_SIZE; i++)
-	{
-		Object empty;
-		empty.name = "Empty";
-		cellDungeon.pcInv.push_back(empty);
-	}
-	printf("%ld 11", cellDungeon.pcInv.size()); //this is necessary! i have no idea why
 	//intializing cell dungeon positions
 	for (int i = 0; i < ROWS; i++)
 	{
@@ -2244,7 +2373,6 @@ int main(int argc, char *argv[])
 	{
 		numofmonsters = atoi(argv[2]);
 	}
-	printf("object desc %d", cellDungeon.object_descriptions.capacity());
 	//mallocing for monsters array and total characters array
 	cellDungeon.characters = (Character *)malloc((numofmonsters + 1) * sizeof(Character));
 	//first character will always be the PC followed by the monsters
