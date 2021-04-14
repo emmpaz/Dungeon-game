@@ -539,6 +539,7 @@ static uint32_t parse_object_descriptions(std::ifstream &f,
   std::stringstream expected;
   std::string lookahead;
 
+
   expected << OBJECT_FILE_SEMANTIC << " " << OBJECT_FILE_VERSION;
 
   eat_whitespace(f);
@@ -566,7 +567,7 @@ uint32_t parse_descriptions(dungeon *d)
   std::string file;
   std::ifstream f;
   uint32_t retval;
-
+  printf("%d good?\n", d->monsDes.capacity()); ////debug
   retval = 0;
 
   file = getenv("HOME");
@@ -574,6 +575,7 @@ uint32_t parse_descriptions(dungeon *d)
     file = ".";
   }
   file += std::string("/") + SAVE_DIR + "/" + OBJECT_DESC_FILE;
+
   f.open(file.c_str());
 
   if (parse_object_descriptions(f, d, &d->object_descriptions)) {
@@ -581,7 +583,6 @@ uint32_t parse_descriptions(dungeon *d)
   }
 
   f.close();
-
   return retval;
 }
 

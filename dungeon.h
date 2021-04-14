@@ -23,7 +23,7 @@
 #define MAX_OBJECTS 50
 #define PC_COLOR 7
 #define PC_INVENTORY_SIZE 22
-#define PC_EQUIP_SLOTS 12
+#define PC_EQUIPMENT_SLOTS 12
 
 class MonsterDescription
 {
@@ -117,6 +117,8 @@ public:
 	int nextTurn;
 	int sequenceNum;
 	heap_node_t *hn;
+	int health;
+	dice damage;
 };
 
 //struct for stairs to store where placed on grid

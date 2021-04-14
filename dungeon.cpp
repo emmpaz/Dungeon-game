@@ -300,7 +300,7 @@ void init_dungeon(dungeon *d)
 	//get ranges set (inclusive)
 	std::uniform_int_distribution<int> row(1, 13);
 	std::uniform_int_distribution<int> col(1, 70);
-	while (monstersPlaced < d->numOfCharacters)
+	while (monstersPlaced < d->numOfCharacters - 1)
 	{ //gets stuck in this loop
 		int randRow = row(mt);
 		int randCol = col(mt);
@@ -641,8 +641,11 @@ void displayInventory(dungeon *d, WINDOW *win)
 	int end = (PC_INVENTORY_SIZE - PC_EQUIPMENT_SLOTS <= 24) ? PC_INVENTORY_SIZE - PC_EQUIPMENT_SLOTS : 24;
 	for (int i = PC_EQUIPMENT_SLOTS; i < end; i++)
 	{
-		wprintw(win, "%s", d->pcInv.at(i).name);
-		wprintw(win, "\n");
+		if (d->pcInv.at(i).name != "Empty")
+		{
+			wprintw(win, "%s ", d->pcInv.at(i).name);
+			wprintw(win, "\n");
+		}
 	}
 	mvwprintw(win, 5, 50, "press esc to go back to map");
 	while (1)
@@ -663,8 +666,8 @@ void displayInventory(dungeon *d, WINDOW *win)
 			else
 			{
 				{
-					//int start = (PC_INVENTORY_SIZE - 24 <= PC_EQUIPMENT_SLOTS) ? PC_EQUIPMENT_SLOTS : 
-					int end = PC_INVENTORY_SIZE; 
+					start = (PC_INVENTORY_SIZE - 24 <= PC_EQUIPMENT_SLOTS) ? PC_EQUIPMENT_SLOTS : PC_INVENTORY_SIZE - 24;
+					end = PC_INVENTORY_SIZE;
 				}
 			}
 		}
@@ -678,14 +681,17 @@ void displayInventory(dungeon *d, WINDOW *win)
 			}
 			else
 			{
-				int start = PC_EQUIPMENT_SLOTS;
-				int end = (PC_INVENTORY_SIZE - PC_EQUIPMENT_SLOTS <= 24) ? PC_INVENTORY_SIZE - PC_EQUIPMENT_SLOTS : 24;
+				start = PC_EQUIPMENT_SLOTS;
+				end = (PC_INVENTORY_SIZE - PC_EQUIPMENT_SLOTS <= 24) ? PC_INVENTORY_SIZE - PC_EQUIPMENT_SLOTS : 24;
 			}
 		}
 		for (int i = start; i < end; i++)
 		{
-			wprintw(win, "%s", d->pcInv.at(i).name);
-			wprintw(win, "\n");
+			if (d->pcInv.at(i).name != "Empty")
+			{
+				wprintw(win, "%s", d->pcInv.at(i).name);
+				wprintw(win, "\n");
+			}
 		}
 		mvwprintw(win, 5, 50, "press esc to go back to map");
 	}
@@ -2203,7 +2209,7 @@ void getMonstDescrip(std::vector<MonsterDescription> &v)
 			if (success)
 			{
 				currentMon.placed = 0;
-				v.push_back(currentMon);
+				v.push_back(currentMon); //segfault
 			}
 		}
 	}
@@ -2214,14 +2220,13 @@ int main(int argc, char *argv[])
 {
 	dungeon cellDungeon;
 	int numofmonsters;
-	printf("f\n");
 	for (int i = 0; i < PC_INVENTORY_SIZE; i++)
 	{
 		Object empty;
 		empty.name = "Empty";
 		cellDungeon.pcInv.push_back(empty);
 	}
-	printf("%ld", cellDungeon.pcInv.size()); //this is necessary! i have no idea why
+	printf("%ld 11", cellDungeon.pcInv.size()); //this is necessary! i have no idea why
 	//intializing cell dungeon positions
 	for (int i = 0; i < ROWS; i++)
 	{
@@ -2239,8 +2244,9 @@ int main(int argc, char *argv[])
 	{
 		numofmonsters = atoi(argv[2]);
 	}
+	printf("object desc %d", cellDungeon.object_descriptions.capacity());
 	//mallocing for monsters array and total characters array
-	cellDungeon.characters = (Character *)malloc((numofmonsters + 2) * sizeof(Character));
+	cellDungeon.characters = (Character *)malloc((numofmonsters + 1) * sizeof(Character));
 	//first character will always be the PC followed by the monsters
 	cellDungeon.numOfCharacters = numofmonsters + 1;
 	//initializing the dungeon
@@ -2250,6 +2256,6 @@ int main(int argc, char *argv[])
 	heap_t moveQueue = movePrioQueueInit(&cellDungeon); //stores when characters will move
 	game_loop(&cellDungeon, &moveQueue);				//the actual game
 	free(cellDungeon.characters);						//freeing the memory
-	
+
 	return 0;
 }
