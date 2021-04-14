@@ -20,20 +20,22 @@
 #define MAX_MONSTERS 10
 #define PC_SPEED 10
 #define VEIW_RADIUS 2
-#define MAX_OBJECTS 10
+#define MAX_OBJECTS 50
 #define PC_COLOR 7
+#define PC_INVENTORY_SIZE 22
+#define PC_EQUIP_SLOTS 12
 
-
-class MonsterDescription{
+class MonsterDescription
+{
 public:
 	std::vector<std::string> name;
 	std::string description;
 	std::vector<std::string> color; //for printing
-	std::vector<int> colorBits; //storing type of colors
+	std::vector<int> colorBits;		//storing type of colors
 	std::string speed;
 	dice speedtest;
-	std::vector<std::string> abilities;//for printing
- 	int abilBits;//order of abilities in bit order from largest bit to smallest: BOSS|UNIQ|DESTROY|PICKUP|PASS|ERATIC|TUNNEL|TELE|SMART
+	std::vector<std::string> abilities; //for printing
+	int abilBits;						//order of abilities in bit order from largest bit to smallest: BOSS|UNIQ|DESTROY|PICKUP|PASS|ERATIC|TUNNEL|TELE|SMART
 	std::string HP;
 	dice hitpoints;
 	std::string attackDamage;
@@ -43,7 +45,8 @@ public:
 	int placed;
 };
 
-class Object{
+class Object
+{
 public:
 	std::string name; //to see if there is another instance
 	int color;
@@ -62,12 +65,12 @@ public:
 	int gridRow;
 	int gridCol;
 	bool pickedUp;
-
 };
 
-class Character{
+class Character
+{
 public:
-	int dead;//0=alive 1=dead
+	int dead; //0=alive 1=dead
 	int speed;
 	char typeofChar;
 	int gridRow;
@@ -84,7 +87,8 @@ public:
 	int rarity;
 };
 //this will contain all the info for a cell in the dungeon
-class cell{
+class cell
+{
 public:
 	u_int8_t hardness;
 	int priority;
@@ -94,16 +98,18 @@ public:
 	int gridCol;
 };
 //struct for a room
-class room{
+class room
+{
 public:
 	int rows;
-  int cols;
-  int gridRow;
- 	int gridCol;
+	int cols;
+	int gridRow;
+	int gridCol;
 };
 
 //player character
-class PC{
+class PC
+{
 public:
 	uint8_t gridRow;
 	uint8_t gridCol;
@@ -114,7 +120,8 @@ public:
 };
 
 //struct for stairs to store where placed on grid
-class stairs{
+class stairs
+{
 public:
 	int gridRow;
 	int gridCol;
@@ -122,7 +129,8 @@ public:
 };
 
 //struct for the dungeon
-class dungeon{
+class dungeon
+{
 public:
 	room Rooms[MAX_ROOMS];
 	int dungeonGrid[ROWS][COLS];
@@ -130,7 +138,6 @@ public:
 	stairs Stairs[MAX_STAIRS];
 	Character *characters;
 	PC pc;
-	Object pcInv[20];
 	char revelaedBoard[ROWS][COLS];
 	int turn;
 	int numOfCharacters;
@@ -139,13 +146,15 @@ public:
 	std::vector<object_description> object_descriptions;
 	bool fullDungeon;
 	std::vector<Object> objects;
+	std::vector<Object> pcInv;
 };
 
-class BoldBoard {
-	public:
-		char board[ROWS][COLS];
-		bool bold[ROWS][COLS];
-		int color[ROWS][COLS];
+class BoldBoard
+{
+public:
+	char board[ROWS][COLS];
+	bool bold[ROWS][COLS];
+	int color[ROWS][COLS];
 };
 
 #endif
