@@ -46,6 +46,7 @@ void object_factory(dungeon *d){
   std::random_device rd;
   std::mt19937 mt(rd());
   //get ranges set (inclusive)
+   std::cout << "wasdadadad" << std::endl;
   std::uniform_int_distribution<int> obj(0, d->object_descriptions.size()-1);
   std::uniform_int_distribution<int> row(1, 13);
   std::uniform_int_distribution<int> col(1, 70);
