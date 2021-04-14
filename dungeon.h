@@ -139,6 +139,7 @@ public:
 	std::vector<object_description> object_descriptions;
 	bool fullDungeon;
 	std::vector<Object> objects;
+	std::vector<Object> pcInv;
 };
 
 class BoldBoard {

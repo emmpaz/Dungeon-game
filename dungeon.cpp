@@ -1879,6 +1879,12 @@ void getMonstDescrip(std::vector<MonsterDescription> &v){
 
 int main(int argc, char *argv[]){
 	dungeon cellDungeon;
+		for (int i = 0; i < 22; i++)
+	{
+		Object empty;
+		empty.name = "Empty";
+		cellDungeon.pcInv.push_back(empty);
+	}
   int numofmonsters;
   //intializing cell dungeon positions
   for(int i = 0; i < ROWS; i++){
