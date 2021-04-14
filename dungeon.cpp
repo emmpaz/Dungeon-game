@@ -106,7 +106,8 @@ void monster_factory(dungeon *d, int index){
   }
   //monsters won't have names
   (d->characters + index)->dead = 0;
-  (d->characters + index)->colorBits.push_back(d->monsDes[randMon].colorBits[0]);
+  std::cout << (d->characters + index)->colorBits.capacity() << std::endl;
+  (d->characters + index)->colorBits.push_back(d->monsDes.at(randMon).colorBits.at(0));//breaking here
   (d->characters + index)->speed = d->monsDes[randMon].speedtest.roll();
   (d->characters + index)->type = d->monsDes[randMon].abilBits;
   (d->characters + index)->hitpoints = d->monsDes[randMon].hitpoints.roll();
@@ -192,7 +193,7 @@ void init_dungeon(dungeon *d){
 	  for(int i=0; i<d->Rooms[roomsPlaced].rows; i++){
 	    for(int j=0; j<d->Rooms[roomsPlaced].cols;j++){
 	    	//placing player in first room top left
-	    	if(roomsPlaced == 0){
+	    	if(roomsPlaced == 0 && i == 0 && j ==0){
 	    	  d->pc.gridRow = randRow;
 	    	  d->pc.gridCol = randCol;
 	    	  (d->characters)->gridRow = randRow;
@@ -200,7 +201,7 @@ void init_dungeon(dungeon *d){
 	    	  (d->characters)->typeofChar = '@';
 	    	  (d->characters)->speed = PC_SPEED;
 	    	  (d->characters)->sequenceNum = 0;
-			  (d->characters)->colorBits.push_back(PC_COLOR);
+			    (d->characters)->colorBits.push_back(PC_COLOR);
 	    	}
 	     	//dungeonGrid[randRow + i][randCol + j] = 0;
 	     	d->dungeon[randRow + i][randCol + j].hardness = FLOOR_HARDNESS;
@@ -256,6 +257,7 @@ for(int i = 0; i < MAX_ROOMS-1;i++){
 
        }
        object_factory(d);
+
        //this loop places monsters on floors
     int monstersPlaced = 0;
     d->monstersAlive = d->numOfCharacters-1;
@@ -264,12 +266,13 @@ for(int i = 0; i < MAX_ROOMS-1;i++){
     //get ranges set (inclusive)
     std::uniform_int_distribution<int> row(1, 13);
     std::uniform_int_distribution<int> col(1, 70);
-    while(monstersPlaced < d->numOfCharacters){ //gets stuck in this loop
+    while(monstersPlaced < d->numOfCharacters-1){ //gets stuck in this loop
     int randRow = row(mt);
 	  int randCol = col(mt);
     if(d->dungeon[randRow][randCol].hardness == FLOOR_HARDNESS && randRow != d->pc.gridRow && randCol != d->pc.gridCol){
        	 	//finds a random type and speed for monster
        	 	//declaring the monster inside of the character array starting at index 1
+
          monster_factory(d, monstersPlaced + 1);
 		 (d->characters + monstersPlaced + 1)->gridRow = randRow;
 		 (d->characters + monstersPlaced + 1)->gridCol = randCol;
@@ -1879,12 +1882,6 @@ void getMonstDescrip(std::vector<MonsterDescription> &v){
 
 int main(int argc, char *argv[]){
 	dungeon cellDungeon;
-		for (int i = 0; i < 22; i++)
-	{
-		Object empty;
-		empty.name = "Empty";
-		cellDungeon.pcInv.push_back(empty);
-	}
   int numofmonsters;
   //intializing cell dungeon positions
   for(int i = 0; i < ROWS; i++){
@@ -1902,16 +1899,26 @@ int main(int argc, char *argv[]){
     	numofmonsters = atoi(argv[2]);
    }
     	//mallocing for monsters array and total characters array
-   cellDungeon.characters = (Character*) malloc((numofmonsters + 2) * sizeof(Character));
+      /*
+
+        PUT ANY INITIALIZAING AFTER THIS LINE
+
+      */
+   cellDungeon.characters = (Character*) malloc((numofmonsters + 1) * sizeof(Character));
 	//first character will always be the PC followed by the monsters
    cellDungeon.numOfCharacters = numofmonsters + 1;
 	//initializing the dungeon
+  for(int i = 0; i < 22; i++){
+    Object test;
+    test.name = "sda";
+    cellDungeon.pcInv.push_back(test);
+  }
   parse_descriptions(&cellDungeon); //this hoe work
   getMonstDescrip(cellDungeon.monsDes); //THIS LINE IS STUPIDBFGJSKLABDFLJKASBFL
   init_dungeon(&cellDungeon); // i confusion
   heap_t moveQueue = movePrioQueueInit(&cellDungeon); //stores when characters will move
-  game_loop(&cellDungeon, &moveQueue); //the actual game
+  game_loop(&cellDungeon, &moveQueue); //the actual game*/
   free(cellDungeon.characters); //freeing the memory
-  
+
   return 0;
 }

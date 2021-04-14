@@ -62,7 +62,6 @@ public:
 	int gridRow;
 	int gridCol;
 	bool pickedUp;
-
 };
 
 class Character{
