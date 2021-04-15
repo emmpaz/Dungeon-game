@@ -111,7 +111,8 @@ public:
 	int nextTurn;
 	int sequenceNum;
 	heap_node_t *hn;
-	dice damage;
+	//dice damage;
+	//int health;
 };
 
 //struct for stairs to store where placed on grid
