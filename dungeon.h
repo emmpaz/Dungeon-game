@@ -117,7 +117,7 @@ public:
 	int nextTurn;
 	int sequenceNum;
 	heap_node_t *hn;
-	int health;
+	int health=30;
 	dice damage;
 };
 
