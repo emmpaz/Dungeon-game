@@ -20,7 +20,7 @@
 #define MAX_MONSTERS 10
 #define PC_SPEED 10
 #define VEIW_RADIUS 2
-#define MAX_OBJECTS 50
+#define MAX_OBJECTS 10
 #define PC_COLOR 7
 #define PC_INVENTORY_SIZE 22
 #define PC_EQUIPMENT_SLOTS 12
@@ -148,7 +148,7 @@ public:
 	std::vector<object_description> object_descriptions;
 	bool fullDungeon;
 	std::vector<Object> objects;
-	std::vector<Object> pcInv;
+	std::vector<Object*> pcInv;
 };
 
 class BoldBoard

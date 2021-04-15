@@ -133,22 +133,24 @@ void init_dungeon(dungeon *d)
 {
 	for (int i = 0; i < PC_INVENTORY_SIZE; i++)
 	{
-		Object empty;
-		empty.name = "Empty";
+		Object *empty = new Object;
+		empty->name = "Empty";
+		empty->type = objtype_no_type;
+		empty->pickedUp = true;
 		d->pcInv.push_back(empty);
 	}
-	d->pcInv.at(0).type = objtype_no_type;
-	d->pcInv.at(1).type = objtype_WEAPON;
-	d->pcInv.at(2).type = objtype_OFFHAND;
-	d->pcInv.at(3).type = objtype_RANGED;
-	d->pcInv.at(4).type = objtype_LIGHT;
-	d->pcInv.at(5).type = objtype_ARMOR;
-	d->pcInv.at(6).type = objtype_HELMET;
-	d->pcInv.at(7).type = objtype_CLOAK;
-	d->pcInv.at(8).type = objtype_GLOVES;
-	d->pcInv.at(9).type = objtype_BOOTS;
-	d->pcInv.at(10).type = objtype_AMULET;
-	d->pcInv.at(11).type = objtype_RING;
+	d->pcInv.at(0)->type = objtype_WEAPON;
+	d->pcInv.at(1)->type = objtype_OFFHAND;
+	d->pcInv.at(2)->type = objtype_RANGED;
+	d->pcInv.at(3)->type = objtype_LIGHT;
+	d->pcInv.at(4)->type = objtype_ARMOR;
+	d->pcInv.at(5)->type = objtype_HELMET;
+	d->pcInv.at(6)->type = objtype_CLOAK;
+	d->pcInv.at(7)->type = objtype_GLOVES;
+	d->pcInv.at(8)->type = objtype_BOOTS;
+	d->pcInv.at(9)->type = objtype_AMULET;
+	d->pcInv.at(10)->type = objtype_RING;
+	d->pcInv.at(11)->type = objtype_RING;
 
 	d->fullDungeon = true;
 	for (int i = 0; i < ROWS; i++)
@@ -417,12 +419,15 @@ void printBoard(dungeon *d)
 							board.bold[row][col] = true;
 							for (std::vector<Object>::iterator it = d->objects.begin(); it != d->objects.end(); ++it)
 							{ //adding items if they are in seen location
-								if (it->gridRow == row && it->gridCol == col && !it->pickedUp)
+								if (!it->pickedUp)
 								{
-									board.board[it->gridRow][it->gridCol] = it->symbol;
-									board.color[it->gridRow][it->gridCol] = it->color;
-									board.bold[row][col] = false;
-									break;
+									if (it->gridRow == row && it->gridCol == col)
+									{
+										board.board[it->gridRow][it->gridCol] = it->symbol;
+										board.color[it->gridRow][it->gridCol] = it->color;
+										board.bold[row][col] = false;
+										break;
+									}
 								}
 							}
 							for (int k = 0; k < d->numOfCharacters; k++)
@@ -477,12 +482,15 @@ void printBoard(dungeon *d)
 								board.bold[row][col] = true;
 								for (std::vector<Object>::iterator it = d->objects.begin(); it != d->objects.end(); ++it)
 								{ //adding items if they are in seen location
-									if (it->gridRow == row && it->gridCol == col && !it->pickedUp)
+									if (!it->pickedUp)
 									{
-										board.board[it->gridRow][it->gridCol] = it->symbol;
-										board.color[it->gridRow][it->gridCol] = it->color;
-										board.bold[row][col] = false;
-										break;
+										if (it->gridRow == row && it->gridCol == col)
+										{
+											board.board[it->gridRow][it->gridCol] = it->symbol;
+											board.color[it->gridRow][it->gridCol] = it->color;
+											board.bold[row][col] = false;
+											break;
+										}
 									}
 								}
 								for (int k = 0; k < d->numOfCharacters; k++)
@@ -653,22 +661,191 @@ int pc_visible(dungeon *d, Character *p)
 	return -1;
 }
 
+int getEquipment(dungeon *d, WINDOW *win)
+{
+	char slotNames[12] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'};
+	keypad(win, TRUE);
+	int start = 0;
+	int end = 23 < PC_EQUIPMENT_SLOTS ? 23 : PC_EQUIPMENT_SLOTS;
+	int cursor = 0;
+	for (int i = 0; i < end; i++)
+	{
+		i == cursor ? wattron(win, A_BOLD) : wattroff(win, A_BOLD);
+		wprintw(win, "Name: ");
+		for (int j = 0; j < d->pcInv.at(i)->name.length(); j++)
+		{
+			wprintw(win, "%c", d->pcInv.at(i)->name[j]);
+		}
+		wprintw(win, ", Type: %c \n", slotNames[d->pcInv.at(i)->type]);
+	}
+	wattroff(win, A_BOLD);
+	while (1)
+	{
+		int option = wgetch(win);
+		bool flag = false;
+		if (option == 27 || option == 'Q' || option == 'e')
+		{
+			break;
+		}
+		else if (option == 'w')
+		{
+			werase(win);
+			return cursor;
+			break;
+		}
+		else if (option == KEY_DOWN)
+		{
+			flag = true;
+			if (cursor + 1 >= end)
+			{
+				if (end + 1 < PC_EQUIPMENT_SLOTS)
+				{
+					start++;
+					end++;
+				}
+				else
+				{
+					end = PC_EQUIPMENT_SLOTS;
+					end - 23 > 0 ? start = end - 23 : start = 0;
+				}
+			}
+			cursor + 1 < end ? cursor++ : cursor = end - 1;
+		}
+		else if (option == KEY_UP)
+		{
+			flag = true;
+			if (cursor <= start)
+			{
+				if (start > 0)
+				{
+					start--;
+					end--;
+				}
+				else
+				{
+					start = 0;
+					start + 23 < PC_EQUIPMENT_SLOTS ? end = start + 23 : end = PC_EQUIPMENT_SLOTS;
+				}
+			}
+			cursor - 1 >= start ? cursor-- : cursor == start;
+		}
+		if (flag)
+		{
+			werase(win);
+			for (int i = start; i < end; i++)
+			{
+				i == cursor ? wattron(win, A_BOLD) : wattroff(win, A_BOLD);
+				wprintw(win, "Name: ");
+				for (int j = 0; j < d->pcInv.at(i)->name.length(); j++)
+				{
+					wprintw(win, "%c", d->pcInv.at(i)->name[j]);
+				}
+				wprintw(win, ", Type: %c \n", slotNames[d->pcInv.at(i)->type]);
+			}
+			wattroff(win, A_BOLD);
+		}
+	}
+	werase(win);
+	return -1;
+}
+
+void unEpuip(dungeon *d, Object *o)
+{
+	//TODO:
+}
+
+void epuipItem(dungeon *d, WINDOW *win, int on, int off) //on is what is currenty being worn, off is what is going to be put on
+{
+	if (on < 0 || off < 0)
+	{
+		return;
+	}
+	if (d->pcInv.at(on)->type == d->pcInv.at(off)->type || d->pcInv.at(off)->type == objtype_no_type || (d->pcInv.at(on)->name != "Empty" && d->pcInv.at(off)->name != "Empty"))
+	{
+		if (d->pcInv.at(on)->name != "Empty")
+		{
+			unEpuip(d, d->pcInv.at(on));
+		}
+		else
+		{
+			d->pcInv.at(on)->type = d->pcInv.at(off)->type;
+		}
+		if (d->pcInv.at(off)->name == "Empty")
+		{
+			d->pcInv.at(off)->type = objtype_no_type;
+		}
+		else
+		{
+			//TODO: dice
+		}
+		Object *temp = d->pcInv.at(off);
+		d->pcInv.at(off) = d->pcInv.at(on);
+		d->pcInv.at(on) = temp;
+		werase(win);
+	}
+	else
+	{
+		werase(win);
+		mvwprintw(win, 0, 0, "Wrong Type\n");
+	}
+}
+
+void dropItem(dungeon *d, Object **item, object_type type)
+{
+	if ((*item) != nullptr && (*item)->name != "Empty")
+	{
+		(*item)->pickedUp = false;
+		bool freeSpot = true;
+		for (std::vector<Object>::iterator it = d->objects.begin(); it != d->objects.end(); ++it)
+		{
+			if (it->gridRow == d->pc.gridRow && it->gridCol == d->pc.gridCol && !it->pickedUp)
+			{
+				freeSpot == false;
+				break;
+			}
+		}
+		if (freeSpot)
+		{
+			(*item)->gridRow = d->pc.gridRow;
+			(*item)->gridCol = d->pc.gridCol;
+		}
+		else
+		{
+			int possibleSpots = (ROWS - 2) * (COLS - 2);
+			int corner[4][2] = {{1, 1}, {1, -1}, {-1, -1}, {-1, 1}};
+			int cornerVector[4][2] = {{1, 1}, {1, -1}, {-1, -1}, {-1, 1}};
+			int stepVector[4][2] = {{0, -1}, {-1, 0}, {0, 1}, {1, 0}};
+			while (possibleSpots > 0) //prevents infi loop
+			{
+				possibleSpots--;
+			}
+		}
+		Object *empty = new Object;
+		empty->name = "Empty";
+		empty->type = type;
+		empty->pickedUp = true;
+		(*item) = empty;
+	}
+}
+
 void displayEquipment(dungeon *d, WINDOW *win);
 
-void displayInventory(dungeon *d, WINDOW *win, int start, int end);
+void displayInventory(dungeon *d, WINDOW *win)
 {
+	char slotNames[12] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'};
 	keypad(win, TRUE);
 	int start = PC_EQUIPMENT_SLOTS;
-	int end = PC_EQUIPMENT_SLOTS + 24 < PC_INVENTORY_SIZE ? PC_EQUIPMENT_SLOTS + 24 : PC_INVENTORY_SIZE;
+	int end = PC_EQUIPMENT_SLOTS + 23 < PC_INVENTORY_SIZE ? PC_EQUIPMENT_SLOTS + 23 : PC_INVENTORY_SIZE;
 	int cursor = PC_EQUIPMENT_SLOTS;
 	for (int i = PC_EQUIPMENT_SLOTS; i < end; i++)
 	{
-		for (int j = 0; j < d->pcInv.at(i).name.length(); j++)
+		i == cursor ? wattron(win, A_BOLD) : wattroff(win, A_BOLD);
+		wprintw(win, "Slot: %d, Name: ", i - PC_EQUIPMENT_SLOTS);
+		for (int j = 0; j < d->pcInv.at(i)->name.length(); j++)
 		{
-			i == cursor ? wattron(win, A_BOLD) : wattroff(win, A_BOLD);
-			wprintw(win, "%c", d->pcInv.at(i).name[j]);
+			wprintw(win, "%c", d->pcInv.at(i)->name[j]);
 		}
-		wprintw(win, "\n");
+		wprintw(win, ", Type: %c \n", slotNames[d->pcInv.at(i)->type]);
 	}
 	wattroff(win, A_BOLD);
 	while (1)
@@ -681,15 +858,26 @@ void displayInventory(dungeon *d, WINDOW *win, int start, int end);
 		}
 		else if (option == 'e')
 		{
-			WINDOW *win = newwin(24, 80, 0, 0);
-			displayEquipment(d, win);
-			erase();
+			WINDOW *nwin = newwin(24, 80, 0, 0);
+			displayEquipment(d, nwin);
 			break;
+		}
+		else if (option == 'd' && d->pcInv.at(cursor)->name != "Empty")
+		{
+			dropItem(d, &(d->pcInv.at(cursor)), objtype_no_type);
+			flag = true;
+			werase(win);
+		}
+		else if (option == 'w')
+		{
+			werase(win);
+			epuipItem(d, win, cursor, getEquipment(d, win));
+			flag = true;
 		}
 		else if (option == KEY_DOWN)
 		{
-			werase(win);
 			flag = true;
+			werase(win);
 			if (cursor + 1 >= end)
 			{
 				if (end + 1 < PC_INVENTORY_SIZE)
@@ -700,15 +888,15 @@ void displayInventory(dungeon *d, WINDOW *win, int start, int end);
 				else
 				{
 					end = PC_INVENTORY_SIZE;
-					end - 24 > PC_EQUIPMENT_SLOTS ? start = end - 24 : start = PC_EQUIPMENT_SLOTS;
+					end - 23 > PC_EQUIPMENT_SLOTS ? start = end - 23 : start = PC_EQUIPMENT_SLOTS;
 				}
 			}
 			cursor + 1 < end ? cursor++ : cursor = end - 1;
 		}
 		else if (option == KEY_UP)
 		{
-			werase(win);
 			flag = true;
+			werase(win);
 			if (cursor <= start)
 			{
 				if (start > PC_EQUIPMENT_SLOTS)
@@ -719,7 +907,7 @@ void displayInventory(dungeon *d, WINDOW *win, int start, int end);
 				else
 				{
 					start = PC_EQUIPMENT_SLOTS;
-					start + 24 < PC_INVENTORY_SIZE ? end = start + 24 : end = PC_INVENTORY_SIZE;
+					start + 23 < PC_INVENTORY_SIZE ? end = start + 23 : end = PC_INVENTORY_SIZE;
 				}
 			}
 			cursor - 1 >= start ? cursor-- : cursor == start;
@@ -728,33 +916,37 @@ void displayInventory(dungeon *d, WINDOW *win, int start, int end);
 		{
 			for (int i = start; i < end; i++)
 			{
-				for (int j = 0; j < d->pcInv.at(i).name.length(); j++)
+				i == cursor ? wattron(win, A_BOLD) : wattroff(win, A_BOLD);
+				wprintw(win, "Slot: %d, Name: ", i - PC_EQUIPMENT_SLOTS);
+				for (int j = 0; j < d->pcInv.at(i)->name.length(); j++)
 				{
-					i == cursor ? wattron(win, A_BOLD) : wattroff(win, A_BOLD);
-					wprintw(win, "%c", d->pcInv.at(i).name[j]);
+					wprintw(win, "%c", d->pcInv.at(i)->name[j]);
 				}
-				wprintw(win, "\n");
+				wprintw(win, ", Type: %c \n", slotNames[d->pcInv.at(i)->type]);
 			}
 			wattroff(win, A_BOLD);
 		}
 	}
+	werase(win);
 	delwin(win);
 }
 
 void displayEquipment(dungeon *d, WINDOW *win)
 {
+	char slotNames[12] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'};
 	keypad(win, TRUE);
 	int start = 0;
-	int end = 24 < PC_EQUIPMENT_SLOTS ? 24 : PC_EQUIPMENT_SLOTS;
+	int end = 23 < PC_EQUIPMENT_SLOTS ? 23 : PC_EQUIPMENT_SLOTS;
 	int cursor = 0;
 	for (int i = 0; i < end; i++)
 	{
-		for (int j = 0; j < d->pcInv.at(i).name.length(); j++)
+		i == cursor ? wattron(win, A_BOLD) : wattroff(win, A_BOLD);
+		wprintw(win, "Name: ");
+		for (int j = 0; j < d->pcInv.at(i)->name.length(); j++)
 		{
-			i == cursor ? wattron(win, A_BOLD) : wattroff(win, A_BOLD);
-			wprintw(win, "%c", d->pcInv.at(i).name[j]);
+			wprintw(win, "%c", d->pcInv.at(i)->name[j]);
 		}
-		wprintw(win, "\n");
+		wprintw(win, ", Type: %c \n", slotNames[d->pcInv.at(i)->type]);
 	}
 	wattroff(win, A_BOLD);
 	while (1)
@@ -767,15 +959,20 @@ void displayEquipment(dungeon *d, WINDOW *win)
 		}
 		else if (option == 'i')
 		{
-			WINDOW *win = newwin(24, 80, 0, 0);
-			displayInventory(d, win);
-			erase();
+			WINDOW *nwin = newwin(24, 80, 0, 0);
+			displayInventory(d, nwin);
 			break;
+		}
+		else if (option == 'd' && d->pcInv.at(cursor)->name != "Empty")
+		{
+			dropItem(d, &(d->pcInv.at(cursor)), d->pcInv.at(cursor)->type);
+			flag = true;
+			werase(win);
 		}
 		else if (option == KEY_DOWN)
 		{
-			werase(win);
 			flag = true;
+			werase(win);
 			if (cursor + 1 >= end)
 			{
 				if (end + 1 < PC_EQUIPMENT_SLOTS)
@@ -786,15 +983,15 @@ void displayEquipment(dungeon *d, WINDOW *win)
 				else
 				{
 					end = PC_EQUIPMENT_SLOTS;
-					end - 24 > 0 ? start = end - 24 : start = 0;
+					end - 23 > 0 ? start = end - 23 : start = 0;
 				}
 			}
 			cursor + 1 < end ? cursor++ : cursor = end - 1;
 		}
 		else if (option == KEY_UP)
 		{
-			werase(win);
 			flag = true;
+			werase(win);
 			if (cursor <= start)
 			{
 				if (start > 0)
@@ -805,7 +1002,7 @@ void displayEquipment(dungeon *d, WINDOW *win)
 				else
 				{
 					start = 0;
-					start + 24 < PC_EQUIPMENT_SLOTS ? end = start + 24 : end = PC_EQUIPMENT_SLOTS;
+					start + 23 < PC_EQUIPMENT_SLOTS ? end = start + 23 : end = PC_EQUIPMENT_SLOTS;
 				}
 			}
 			cursor - 1 >= start ? cursor-- : cursor == start;
@@ -814,16 +1011,18 @@ void displayEquipment(dungeon *d, WINDOW *win)
 		{
 			for (int i = start; i < end; i++)
 			{
-				for (int j = 0; j < d->pcInv.at(i).name.length(); j++)
+				i == cursor ? wattron(win, A_BOLD) : wattroff(win, A_BOLD);
+				wprintw(win, "Name :");
+				for (int j = 0; j < d->pcInv.at(i)->name.length(); j++)
 				{
-					i == cursor ? wattron(win, A_BOLD) : wattroff(win, A_BOLD);
-					wprintw(win, "%c", d->pcInv.at(i).name[j]);
+					wprintw(win, "%c", d->pcInv.at(i)->name[j]);
 				}
-				wprintw(win, "\n");
+				wprintw(win, ", Type: %c \n", slotNames[d->pcInv.at(i)->type]);
 			}
 			wattroff(win, A_BOLD);
 		}
 	}
+	werase(win);
 	delwin(win);
 }
 
@@ -984,16 +1183,16 @@ void teleport(dungeon *d)
 
 void pcPickUp(dungeon *d)
 {
-	for (std::vector<Object>::iterator it = d->objects.begin(); it != d->objects.end(); ++it)
+	for (int i = 0; i < d->objects.size(); i++)
 	{
-		if (it->gridRow == d->pc.gridRow && it->gridCol == d->pc.gridCol && !it->pickedUp)
+		if (d->objects.at(i).gridRow == d->pc.gridRow && d->objects.at(i).gridCol == d->pc.gridCol && !d->objects.at(i).pickedUp)
 		{
-			for (int i = PC_EQUIPMENT_SLOTS; i < PC_INVENTORY_SIZE; i++)
+			for (int j = PC_EQUIPMENT_SLOTS; j < PC_INVENTORY_SIZE; j++)
 			{
-				if (d->pcInv.at(i).name == "Empty")
+				if (d->pcInv.at(j)->name == "Empty")
 				{
-					it->pickedUp = true;
-					d->pcInv.at(i) = *it;
+					d->objects.at(i).pickedUp = true;
+					d->pcInv.at(j) = &(d->objects.at(i));
 					return;
 				}
 			}
