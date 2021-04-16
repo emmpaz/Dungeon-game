@@ -65,6 +65,7 @@ public:
 	int gridRow;
 	int gridCol;
 	bool pickedUp;
+	std::string description;
 };
 
 class Character
@@ -85,6 +86,7 @@ public:
 	int hitpoints;
 	dice Damage;
 	int rarity;
+	std::string description;
 };
 //this will contain all the info for a cell in the dungeon
 class cell

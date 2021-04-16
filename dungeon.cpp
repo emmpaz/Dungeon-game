@@ -83,6 +83,7 @@ void object_factory(dungeon *d)
 		newObj.artifact = d->object_descriptions[randObj].get_artifact();
 		newObj.symbol = object_symbol[newObj.type];
 		newObj.pickedUp = false;
+		newObj.description = d->object_descriptions[randObj].get_description();
 		while (1)
 		{
 			newObj.gridRow = row(mt);
@@ -127,31 +128,11 @@ void monster_factory(dungeon *d, int index)
 	(d->characters + index)->Damage.set_number(d->monsDes[randMon].Damage.get_number());
 	(d->characters + index)->Damage.set_sides(d->monsDes[randMon].Damage.get_sides());
 	(d->characters + index)->typeofChar = d->monsDes[randMon].symbol[0];
+	(d->characters + index)->description = d->monsDes[randMon].description;
 }
 //initializing board
 void init_dungeon(dungeon *d)
 {
-	for (int i = 0; i < PC_INVENTORY_SIZE; i++)
-	{
-		Object *empty = new Object;
-		empty->name = "Empty";
-		empty->type = objtype_no_type;
-		empty->pickedUp = true;
-		d->pcInv.push_back(empty);
-	}
-	d->pcInv.at(0)->type = objtype_WEAPON;
-	d->pcInv.at(1)->type = objtype_OFFHAND;
-	d->pcInv.at(2)->type = objtype_RANGED;
-	d->pcInv.at(3)->type = objtype_LIGHT;
-	d->pcInv.at(4)->type = objtype_ARMOR;
-	d->pcInv.at(5)->type = objtype_HELMET;
-	d->pcInv.at(6)->type = objtype_CLOAK;
-	d->pcInv.at(7)->type = objtype_GLOVES;
-	d->pcInv.at(8)->type = objtype_BOOTS;
-	d->pcInv.at(9)->type = objtype_AMULET;
-	d->pcInv.at(10)->type = objtype_RING;
-	d->pcInv.at(11)->type = objtype_RING;
-
 	d->fullDungeon = true;
 	for (int i = 0; i < ROWS; i++)
 	{
@@ -251,6 +232,7 @@ void init_dungeon(dungeon *d)
 						(d->characters)->speed = PC_SPEED;
 						(d->characters)->sequenceNum = 0;
 						(d->characters)->colorBits.push_back(PC_COLOR);
+						(d->characters)->description = "The player Character";
 					}
 					//dungeonGrid[randRow + i][randCol + j] = 0;
 					d->dungeon[randRow + i][randCol + j].hardness = FLOOR_HARDNESS;
@@ -563,7 +545,6 @@ void printBoard(dungeon *d)
 
 void printBoardWcursor(dungeon *d, int cursorRow, int cursorCol)
 {
-	mvprintw(0, 1, "teleport mode");
 	BoldBoard board;
 	for (int i = 0; i < ROWS; i++)
 	{ //init a temp board, needed for perserving characters
@@ -663,6 +644,7 @@ int pc_visible(dungeon *d, Character *p)
 
 int getEquipment(dungeon *d, WINDOW *win)
 {
+	werase(win);
 	char slotNames[12] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'};
 	keypad(win, TRUE);
 	int start = 0;
@@ -687,11 +669,10 @@ int getEquipment(dungeon *d, WINDOW *win)
 		{
 			break;
 		}
-		else if (option == 'w')
+		else if (option == 'w' || option == 'I' || option == 't')
 		{
 			werase(win);
 			return cursor;
-			break;
 		}
 		else if (option == KEY_DOWN)
 		{
@@ -749,12 +730,101 @@ int getEquipment(dungeon *d, WINDOW *win)
 	return -1;
 }
 
+int getInvetory(dungeon *d, WINDOW *win)
+{
+	werase(win);
+	char slotNames[12] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'};
+	keypad(win, TRUE);
+	int start = PC_EQUIPMENT_SLOTS;
+	int end = PC_EQUIPMENT_SLOTS + 23 < PC_INVENTORY_SIZE ? PC_EQUIPMENT_SLOTS + 23 : PC_INVENTORY_SIZE;
+	int cursor = PC_EQUIPMENT_SLOTS;
+	for (int i = PC_EQUIPMENT_SLOTS; i < end; i++)
+	{
+		i == cursor ? wattron(win, A_BOLD) : wattroff(win, A_BOLD);
+		wprintw(win, "Slot: %d, Name: ", i - PC_EQUIPMENT_SLOTS);
+		for (int j = 0; j < d->pcInv.at(i)->name.length(); j++)
+		{
+			wprintw(win, "%c", d->pcInv.at(i)->name[j]);
+		}
+		wprintw(win, ", Type: %c \n", slotNames[d->pcInv.at(i)->type]);
+	}
+	wattroff(win, A_BOLD);
+	while (1)
+	{
+		int option = wgetch(win);
+		bool flag = false;
+		if (option == 27 || option == 'Q')
+		{
+			break;
+		}
+		else if (option == 'I' || option == 'w' || option == 'd' || option == 'x')
+		{
+			werase(win);
+			return cursor;
+		}
+		else if (option == KEY_DOWN)
+		{
+			flag = true;
+			werase(win);
+			if (cursor + 1 >= end)
+			{
+				if (end + 1 < PC_INVENTORY_SIZE)
+				{
+					start++;
+					end++;
+				}
+				else
+				{
+					end = PC_INVENTORY_SIZE;
+					end - 23 > PC_EQUIPMENT_SLOTS ? start = end - 23 : start = PC_EQUIPMENT_SLOTS;
+				}
+			}
+			cursor + 1 < end ? cursor++ : cursor = end - 1;
+		}
+		else if (option == KEY_UP)
+		{
+			flag = true;
+			werase(win);
+			if (cursor <= start)
+			{
+				if (start > PC_EQUIPMENT_SLOTS)
+				{
+					start--;
+					end--;
+				}
+				else
+				{
+					start = PC_EQUIPMENT_SLOTS;
+					start + 23 < PC_INVENTORY_SIZE ? end = start + 23 : end = PC_INVENTORY_SIZE;
+				}
+			}
+			cursor - 1 >= start ? cursor-- : cursor == start;
+		}
+		if (flag)
+		{
+			for (int i = start; i < end; i++)
+			{
+				i == cursor ? wattron(win, A_BOLD) : wattroff(win, A_BOLD);
+				wprintw(win, "Slot: %d, Name: ", i - PC_EQUIPMENT_SLOTS);
+				for (int j = 0; j < d->pcInv.at(i)->name.length(); j++)
+				{
+					wprintw(win, "%c", d->pcInv.at(i)->name[j]);
+				}
+				wprintw(win, ", Type: %c \n", slotNames[d->pcInv.at(i)->type]);
+			}
+			wattroff(win, A_BOLD);
+		}
+	}
+	werase(win);
+	return -1;
+}
+
 void unEpuip(dungeon *d, Object *o)
 {
 	//TODO:
 }
 
-void epuipItem(dungeon *d, WINDOW *win, int on, int off) //on is what is currenty being worn, off is what is going to be put on
+void epuipItem(dungeon *d, WINDOW *win, int off, int on) //on is what is currenty being worn, off is what is going to be put on
 {
 	if (on < 0 || off < 0)
 	{
@@ -790,7 +860,7 @@ void epuipItem(dungeon *d, WINDOW *win, int on, int off) //on is what is current
 	}
 }
 
-void dropItem(dungeon *d, Object **item, object_type type)
+Object *dropItem(dungeon *d, Object **item, object_type type)
 {
 	if ((*item) != nullptr && (*item)->name != "Empty")
 	{
@@ -824,7 +894,44 @@ void dropItem(dungeon *d, Object **item, object_type type)
 		empty->name = "Empty";
 		empty->type = type;
 		empty->pickedUp = true;
+		Object *temp = *item;
 		(*item) = empty;
+		return temp;
+	}
+}
+
+void displayItemDescription(dungeon *d, WINDOW *win, int itemIndex)
+{
+	if (itemIndex != -1)
+	{
+		werase(win);
+		keypad(win, TRUE);
+		wprintw(win, "  Name: ");
+		if (d->pcInv.at(itemIndex)->name == "Empty")
+		{
+			wprintw(win, "Empty\n\n  Description: A space for something.");
+		}
+		else
+		{
+			for (int j = 0; j < d->pcInv.at(itemIndex)->name.length(); j++)
+			{
+				wprintw(win, "%c", d->pcInv.at(itemIndex)->name[j]);
+			}
+			wprintw(win, "\n\n  Description: \n");
+			for (int j = 0; j < d->pcInv.at(itemIndex)->description.length(); j++)
+			{
+				wprintw(win, "%c", d->pcInv.at(itemIndex)->description[j]);
+			}
+			wprintw(win, "\n");
+		}
+		while (1)
+		{
+			int option = wgetch(win);
+			if (option == 27 || option == 'Q' || option == 'I')
+			{
+				return;
+			}
+		}
 	}
 }
 
@@ -862,7 +969,7 @@ void displayInventory(dungeon *d, WINDOW *win)
 			displayEquipment(d, nwin);
 			break;
 		}
-		else if (option == 'd' && d->pcInv.at(cursor)->name != "Empty")
+		else if (option == 'd')
 		{
 			dropItem(d, &(d->pcInv.at(cursor)), objtype_no_type);
 			flag = true;
@@ -871,9 +978,15 @@ void displayInventory(dungeon *d, WINDOW *win)
 		else if (option == 'w')
 		{
 			werase(win);
-			epuipItem(d, win, cursor, getEquipment(d, win));
+			epuipItem(d, win, getEquipment(d, win), cursor);
 			flag = true;
 		}
+		else if (option == 'I')
+		{
+			displayItemDescription(d, win, cursor);
+			flag = true;
+		}
+
 		else if (option == KEY_DOWN)
 		{
 			flag = true;
@@ -963,11 +1076,10 @@ void displayEquipment(dungeon *d, WINDOW *win)
 			displayInventory(d, nwin);
 			break;
 		}
-		else if (option == 'd' && d->pcInv.at(cursor)->name != "Empty")
+		else if (option == 'I')
 		{
-			dropItem(d, &(d->pcInv.at(cursor)), d->pcInv.at(cursor)->type);
+			displayItemDescription(d, win, cursor);
 			flag = true;
-			werase(win);
 		}
 		else if (option == KEY_DOWN)
 		{
@@ -1181,6 +1293,76 @@ void teleport(dungeon *d)
 	}
 }
 
+void lookAtMons(dungeon *d)
+{
+	int cursorRow = d->pc.gridRow;
+	int cursorCol = d->pc.gridCol;
+	while (1)
+	{
+		printBoardWcursor(d, cursorRow, cursorCol);
+		int direction = getch();
+		if (direction == KEY_UP)
+		{
+			if (cursorRow > 0)
+			{
+				cursorRow--;
+			}
+		}
+		else if (direction == KEY_DOWN)
+		{
+			if (cursorRow < 19)
+			{
+				cursorRow++;
+			}
+		}
+		else if (direction == KEY_LEFT)
+		{
+			if (cursorCol > 0)
+			{
+				cursorCol--;
+			}
+		}
+		else if (direction == KEY_RIGHT)
+		{
+			if (cursorCol < 78)
+			{
+				cursorCol++;
+			}
+		}
+		else if (direction == 'Q' || direction == '27')
+		{
+			return;
+		}
+		else if (direction == 'l')
+		{
+			for (int k = 0; k < d->numOfCharacters; k++)
+			{
+				if ((d->characters + k)->dead != 1 && (d->characters + k)->gridRow == cursorRow && (d->characters + k)->gridCol == cursorCol)
+				{
+					WINDOW *win = newwin(24, 80, 0, 0);
+					keypad(win, TRUE);
+					wprintw(win, "  Description: \n");
+					for (int j = 0; j < (d->characters + k)->description.length(); j++)
+					{
+						wprintw(win, "%c", (d->characters + k)->description[j]);
+					}
+					wprintw(win, "\n");
+					while (1)
+					{
+						int option = wgetch(win);
+						if (option == 27 || option == 'Q' || option == 'l')
+						{
+							werase(win);
+							delwin(win);
+							return;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 void pcPickUp(dungeon *d)
 {
 	for (int i = 0; i < d->objects.size(); i++)
@@ -1213,160 +1395,157 @@ int pc_move(dungeon *d)
 	{
 		yDirection--;
 		xDirection--;
-		for(int i=1; i<d->monstersAlive; i++)
+		for (int i = 1; i < d->monstersAlive; i++)
 		{
-		if((d->pc).gridRow+yDirection==(d->characters+i)->gridRow&&(d->pc).gridCol+xDirection==(d->characters+i)->gridCol)
-		{
-			(d->characters+i)->hitpoints-=(d->pc).damage.roll();
-			if((d->characters+i)->hitpoints<=0)
+			if ((d->pc).gridRow + yDirection == (d->characters + i)->gridRow && (d->pc).gridCol + xDirection == (d->characters + i)->gridCol)
 			{
-			(d->characters + i)->dead = 1;
-			(d->characters+i)->gridRow=-1;
-			(d->characters+i)->gridCol=-1;
-			d->monstersAlive--;
+				(d->characters + i)->hitpoints -= (d->pc).damage.roll();
+				if ((d->characters + i)->hitpoints <= 0)
+				{
+					(d->characters + i)->dead = 1;
+					(d->characters + i)->gridRow = -1;
+					(d->characters + i)->gridCol = -1;
+					d->monstersAlive--;
+				}
+				yDirection++;
+				xDirection++;
 			}
-			yDirection++;
-		xDirection++;
-		}
 		}
 	}
 	else if (move == '8' || move == 'k')
 	{
 		yDirection--;
-		for(int i=1; i<d->monstersAlive; i++)
+		for (int i = 1; i < d->monstersAlive; i++)
 		{
-		if((d->pc).gridRow+yDirection==(d->characters+i)->gridRow&&(d->pc).gridCol+xDirection==(d->characters+i)->gridCol)
-		{
-			(d->characters+i)->hitpoints-=(d->pc).damage.roll();
-			if((d->characters+i)->hitpoints<=0)
+			if ((d->pc).gridRow + yDirection == (d->characters + i)->gridRow && (d->pc).gridCol + xDirection == (d->characters + i)->gridCol)
 			{
-			(d->characters + i)->dead = 1;
-			(d->characters+i)->gridRow=-1;
-			(d->characters+i)->gridCol=-1;
-			d->monstersAlive--;
+				(d->characters + i)->hitpoints -= (d->pc).damage.roll();
+				if ((d->characters + i)->hitpoints <= 0)
+				{
+					(d->characters + i)->dead = 1;
+					(d->characters + i)->gridRow = -1;
+					(d->characters + i)->gridCol = -1;
+					d->monstersAlive--;
+				}
+				yDirection++;
 			}
-			yDirection++;
 		}
-		}}
+	}
 	else if (move == '9' || move == 'u')
 	{
 		yDirection--;
 		xDirection++;
-		for(int i=1; i<d->monstersAlive; i++)
+		for (int i = 1; i < d->monstersAlive; i++)
 		{
-		if((d->pc).gridRow+yDirection==(d->characters+i)->gridRow&&(d->pc).gridCol+xDirection==(d->characters+i)->gridCol)
-		{
-			(d->characters+i)->hitpoints-=(d->pc).damage.roll();
-			if((d->characters+i)->hitpoints<=0)
+			if ((d->pc).gridRow + yDirection == (d->characters + i)->gridRow && (d->pc).gridCol + xDirection == (d->characters + i)->gridCol)
 			{
-			(d->characters + i)->dead = 1;
-			(d->characters+i)->gridRow=-1;
-			(d->characters+i)->gridCol=-1;
-			d->monstersAlive--;
+				(d->characters + i)->hitpoints -= (d->pc).damage.roll();
+				if ((d->characters + i)->hitpoints <= 0)
+				{
+					(d->characters + i)->dead = 1;
+					(d->characters + i)->gridRow = -1;
+					(d->characters + i)->gridCol = -1;
+					d->monstersAlive--;
+				}
+				yDirection++;
+				xDirection--;
 			}
-			yDirection++;
-		xDirection--;
-		}
 		}
 	}
-	else if (move == '6' || move == 'l')
+	else if (move == '6' || move == 'L')
 	{
 		xDirection++;
-		for(int i=1; i<d->monstersAlive; i++)
+		for (int i = 1; i < d->monstersAlive; i++)
 		{
-		if((d->pc).gridRow+yDirection==(d->characters+i)->gridRow&&(d->pc).gridCol+xDirection==(d->characters+i)->gridCol)
-		{
-			(d->characters+i)->hitpoints-=(d->pc).damage.roll();
-			if((d->characters+i)->hitpoints<=0)
+			if ((d->pc).gridRow + yDirection == (d->characters + i)->gridRow && (d->pc).gridCol + xDirection == (d->characters + i)->gridCol)
 			{
-			(d->characters + i)->dead = 1;
-			(d->characters+i)->gridRow=-1;
-			(d->characters+i)->gridCol=-1;
-			d->monstersAlive--;
+				(d->characters + i)->hitpoints -= (d->pc).damage.roll();
+				if ((d->characters + i)->hitpoints <= 0)
+				{
+					(d->characters + i)->dead = 1;
+					(d->characters + i)->gridRow = -1;
+					(d->characters + i)->gridCol = -1;
+					d->monstersAlive--;
+				}
+				xDirection--;
 			}
-			xDirection--;
 		}
-		}
-		}
+	}
 	else if (move == '3' || move == 'n')
 	{
-	yDirection++;
+		yDirection++;
 		xDirection++;
-	for(int i=1; i<d->monstersAlive; i++)
+		for (int i = 1; i < d->monstersAlive; i++)
 		{
-		if((d->pc).gridRow+yDirection==(d->characters+i)->gridRow&&(d->pc).gridCol+xDirection==(d->characters+i)->gridCol)
-		{
-			(d->characters+i)->hitpoints-=(d->pc).damage.roll();
-			if((d->characters+i)->hitpoints<=0)
+			if ((d->pc).gridRow + yDirection == (d->characters + i)->gridRow && (d->pc).gridCol + xDirection == (d->characters + i)->gridCol)
 			{
-			(d->characters + i)->dead = 1;
-			(d->characters+i)->gridRow=-1;
-			(d->characters+i)->gridCol=-1;
-			d->monstersAlive--;
+				(d->characters + i)->hitpoints -= (d->pc).damage.roll();
+				if ((d->characters + i)->hitpoints <= 0)
+				{
+					(d->characters + i)->dead = 1;
+					(d->characters + i)->gridRow = -1;
+					(d->characters + i)->gridCol = -1;
+					d->monstersAlive--;
+				}
 			}
 		}
+		yDirection++;
+		for (int i = 1; i < d->monstersAlive; i++)
+		{
+			if ((d->pc).gridRow + yDirection == (d->characters + i)->gridRow && (d->pc).gridCol + xDirection == (d->characters + i)->gridCol)
+			{
+				(d->characters + i)->hitpoints -= (d->pc).damage.roll();
+				if ((d->characters + i)->hitpoints <= 0)
+				{
+					(d->characters + i)->dead = 1;
+					(d->characters + i)->gridRow = -1;
+					(d->characters + i)->gridCol = -1;
+					d->monstersAlive--;
+				}
+				yDirection--;
+			}
 		}
-		yDirection--;
-		xDirection--;
 	}
-	else if (move == '2' || move == 'j'){
-	yDirection++;
-	for(int i=1; i<d->monstersAlive; i++)
-		{
-		if((d->pc).gridRow+yDirection==(d->characters+i)->gridRow&&(d->pc).gridCol+xDirection==(d->characters+i)->gridCol)
-		{
-			(d->characters+i)->hitpoints-=(d->pc).damage.roll();
-			if((d->characters+i)->hitpoints<=0)
-			{
-			(d->characters + i)->dead = 1;
-			(d->characters+i)->gridRow=-1;
-			(d->characters+i)->gridCol=-1;
-			d->monstersAlive--;
-			}
-			yDirection--;
-		}
-		}
-		}
 	else if (move == '1' || move == 'b')
 	{
-	yDirection++;
+		yDirection++;
 		xDirection--;
-	for(int i=1; i<d->monstersAlive; i++)
+		for (int i = 1; i < d->monstersAlive; i++)
 		{
-		if((d->pc).gridRow+yDirection==(d->characters+i)->gridRow&&(d->pc).gridCol+xDirection==(d->characters+i)->gridCol)
-		{
-			(d->characters+i)->hitpoints-=(d->pc).damage.roll();
-			if((d->characters+i)->hitpoints<=0)
+			if ((d->pc).gridRow + yDirection == (d->characters + i)->gridRow && (d->pc).gridCol + xDirection == (d->characters + i)->gridCol)
 			{
-			(d->characters + i)->dead = 1;
-			(d->characters+i)->gridRow=-1;
-			(d->characters+i)->gridCol=-1;
-			d->monstersAlive--;
+				(d->characters + i)->hitpoints -= (d->pc).damage.roll();
+				if ((d->characters + i)->hitpoints <= 0)
+				{
+					(d->characters + i)->dead = 1;
+					(d->characters + i)->gridRow = -1;
+					(d->characters + i)->gridCol = -1;
+					d->monstersAlive--;
+				}
+				yDirection--;
+				xDirection++;
 			}
-			yDirection--;
-		xDirection++;
 		}
-		}
-		
 	}
-	else if (move == '4' || move == 'h'){
-	xDirection--;
-	for(int i=1; i<d->monstersAlive; i++)
+	else if (move == '4' || move == 'h')
+	{
+		xDirection--;
+		for (int i = 1; i < d->monstersAlive; i++)
 		{
-		if((d->pc).gridRow+yDirection==(d->characters+i)->gridRow&&(d->pc).gridCol+xDirection==(d->characters+i)->gridCol)
-		{
-			(d->characters+i)->hitpoints-=(d->pc).damage.roll();
-			if((d->characters+i)->hitpoints<=0)
+			if ((d->pc).gridRow + yDirection == (d->characters + i)->gridRow && (d->pc).gridCol + xDirection == (d->characters + i)->gridCol)
 			{
-			(d->characters + i)->dead = 1;
-			(d->characters+i)->gridRow=-1;
-			(d->characters+i)->gridCol=-1;
-			d->monstersAlive--;
+				(d->characters + i)->hitpoints -= (d->pc).damage.roll();
+				if ((d->characters + i)->hitpoints <= 0)
+				{
+					(d->characters + i)->dead = 1;
+					(d->characters + i)->gridRow = -1;
+					(d->characters + i)->gridCol = -1;
+					d->monstersAlive--;
+				}
+				xDirection++;
 			}
-			xDirection++;
 		}
-		}
-		}
+	}
 
 	else if (move == '5' || move == '.' || move == ' ')
 	{
@@ -1406,6 +1585,54 @@ int pc_move(dungeon *d)
 		erase();
 		return 0;
 	}
+	else if (move == 'I')
+	{
+		WINDOW *win = newwin(24, 80, 0, 0);
+		displayItemDescription(d, win, getInvetory(d, win));
+		erase();
+		delwin(win);
+		return 0;
+	}
+	else if (move == 'd')
+	{
+		WINDOW *win = newwin(24, 80, 0, 0);
+		dropItem(d, &(d->pcInv.at(getInvetory(d, win))), objtype_no_type);
+		erase();
+		delwin(win);
+		return 0;
+	}
+	else if (move == 'w')
+	{
+		WINDOW *win = newwin(24, 80, 0, 0);
+		epuipItem(d, win, getEquipment(d, win), getInvetory(d, win));
+		erase();
+		delwin(win);
+		return 0;
+	}
+	else if (move == 't')
+	{
+		WINDOW *win = newwin(24, 80, 0, 0);
+		dropItem(d, &(d->pcInv.at(getEquipment(d, win))), objtype_no_type);
+		erase();
+		delwin(win);
+		pcPickUp(d); //lol
+		return 0;
+	}
+	else if (move == 'x')
+	{
+		WINDOW *win = newwin(24, 80, 0, 0);
+		Object *item = dropItem(d, &(d->pcInv.at(getInvetory(d, win))), objtype_no_type);
+		item->pickedUp = true; //can't be picked up now
+		erase();
+		delwin(win);
+		return 0;
+	}
+	else if(move == 'l') {
+		lookAtMons(d);
+		erase();
+		return 0;
+	}
+
 	else if (move == '<')
 	{
 		if (d->dungeon[d->pc.gridRow][d->pc.gridCol].character == '>')
@@ -1456,7 +1683,6 @@ int pc_move(dungeon *d)
 	d->pc.gridCol += xDirection;
 	(d->characters)->gridRow += yDirection;
 	(d->characters)->gridCol += xDirection;
-
 
 	return 1;
 }
@@ -1740,17 +1966,18 @@ void monster_move(Character *m, dungeon *dungeon)
 						{
 							if (dungeon->dungeon[m->gridRow + i][m->gridCol + j].hardness <= 85)
 							{
-							if(m->gridRow+i==(dungeon->pc).gridRow&&m->gridCol+j==(dungeon->pc).gridCol)
+								if (m->gridRow + i == (dungeon->pc).gridRow && m->gridCol + j == (dungeon->pc).gridCol)
 								{
-									dungeon->pc.health-=m->Damage.roll();return;
+									dungeon->pc.health -= m->Damage.roll();
+									return;
 								}
-								for(int k=1; k<dungeon->monstersAlive; k++)
+								for (int k = 1; k < dungeon->monstersAlive; k++)
 								{
-								if(m->gridRow+i==(dungeon->characters+k)->gridRow&&m->gridCol+j==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
+									if (m->gridRow + i == (dungeon->characters + k)->gridRow && m->gridCol + j == (dungeon->characters + k)->gridCol)
+									{
+										(dungeon->characters + k)->gridRow = m->gridRow;
+										(dungeon->characters + k)->gridCol = m->gridCol;
+									}
 								}
 								dungeon->dungeon[m->gridRow + i][m->gridCol + j].hardness = 0;
 								m->gridCol += j;
@@ -1779,18 +2006,19 @@ void monster_move(Character *m, dungeon *dungeon)
 							{
 								if (dungeon->dungeon[m->gridRow + i][m->gridCol + j].hardness <= 85)
 								{
-								if(m->gridRow+i==(dungeon->pc).gridRow&&m->gridCol+j==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-							for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+i==(dungeon->characters+k)->gridRow&&m->gridCol+j==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+									if (m->gridRow + i == (dungeon->pc).gridRow && m->gridCol + j == (dungeon->pc).gridCol)
+									{
+										dungeon->pc.health -= m->Damage.roll();
+										return;
+									}
+									for (int k = 1; k < dungeon->monstersAlive; k++)
+									{
+										if (m->gridRow + i == (dungeon->characters + k)->gridRow && m->gridCol + j == (dungeon->characters + k)->gridCol)
+										{
+											(dungeon->characters + k)->gridRow = m->gridRow;
+											(dungeon->characters + k)->gridCol = m->gridCol;
+										}
+									}
 									dungeon->dungeon[m->gridRow + i][m->gridCol + j].hardness = 0;
 									m->gridCol += j;
 									m->gridRow += i;
@@ -1818,18 +2046,19 @@ void monster_move(Character *m, dungeon *dungeon)
 					{
 						if (dungeon->dungeon[m->gridRow + i][m->gridCol + j].priority < dungeon->dungeon[m->gridRow][m->gridCol].priority)
 						{
-						if(m->gridRow+i==(dungeon->pc).gridRow&&m->gridCol+j==(dungeon->pc).gridCol)
+							if (m->gridRow + i == (dungeon->pc).gridRow && m->gridCol + j == (dungeon->pc).gridCol)
+							{
+								dungeon->pc.health -= m->Damage.roll();
+								return;
+							}
+							for (int k = 1; k < dungeon->monstersAlive; k++)
+							{
+								if (m->gridRow + i == (dungeon->characters + k)->gridRow && m->gridCol + j == (dungeon->characters + k)->gridCol)
 								{
-									dungeon->pc.health-=m->Damage.roll();return;
+									(dungeon->characters + k)->gridRow = m->gridRow;
+									(dungeon->characters + k)->gridCol = m->gridCol;
 								}
-						for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+i==(dungeon->characters+k)->gridRow&&m->gridCol+j==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+							}
 							m->gridCol += j;
 							m->gridRow += i;
 							i = j = 2;
@@ -1849,17 +2078,18 @@ void monster_move(Character *m, dungeon *dungeon)
 						{
 							if (dungeon->dungeon[m->gridRow + i][m->gridCol + j].priority < dungeon->dungeon[m->gridRow][m->gridCol].priority)
 							{
-							if(m->gridRow+i==(dungeon->pc).gridRow&&m->gridCol+j==(dungeon->pc).gridCol)
+								if (m->gridRow + i == (dungeon->pc).gridRow && m->gridCol + j == (dungeon->pc).gridCol)
 								{
-									dungeon->pc.health-=m->Damage.roll();return;
+									dungeon->pc.health -= m->Damage.roll();
+									return;
 								}
-						for(int k=1; k<dungeon->monstersAlive; k++)
+								for (int k = 1; k < dungeon->monstersAlive; k++)
 								{
-								if(m->gridRow+i==(dungeon->characters+k)->gridRow&&m->gridCol+j==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
+									if (m->gridRow + i == (dungeon->characters + k)->gridRow && m->gridCol + j == (dungeon->characters + k)->gridCol)
+									{
+										(dungeon->characters + k)->gridRow = m->gridRow;
+										(dungeon->characters + k)->gridCol = m->gridCol;
+									}
 								}
 								m->gridCol += j;
 								m->gridRow += i;
@@ -1881,36 +2111,38 @@ void monster_move(Character *m, dungeon *dungeon)
 		{
 			if (dungeon->dungeon[m->gridRow - 1][m->gridCol - 1].hardness == 0)
 			{
-			if(m->gridRow-1==(dungeon->pc).gridRow&&m->gridCol-1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow-1==(dungeon->characters+k)->gridRow&&m->gridCol-1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+				if (m->gridRow - 1 == (dungeon->pc).gridRow && m->gridCol - 1 == (dungeon->pc).gridCol)
+				{
+					dungeon->pc.health -= m->Damage.roll();
+					return;
+				}
+				for (int k = 1; k < dungeon->monstersAlive; k++)
+				{
+					if (m->gridRow - 1 == (dungeon->characters + k)->gridRow && m->gridCol - 1 == (dungeon->characters + k)->gridCol)
+					{
+						(dungeon->characters + k)->gridRow = m->gridRow;
+						(dungeon->characters + k)->gridCol = m->gridCol;
+					}
+				}
 				m->gridCol--;
 				m->gridRow--;
 				moved = 1;
 			}
 			else if (m->type & (1 << 2) && dungeon->dungeon[m->gridRow - 1][m->gridCol - 1].hardness <= 85)
 			{
-			if(m->gridRow-1==(dungeon->pc).gridRow&&m->gridCol-1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow-1==(dungeon->characters+k)->gridRow&&m->gridCol-1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+				if (m->gridRow - 1 == (dungeon->pc).gridRow && m->gridCol - 1 == (dungeon->pc).gridCol)
+				{
+					dungeon->pc.health -= m->Damage.roll();
+					return;
+				}
+				for (int k = 1; k < dungeon->monstersAlive; k++)
+				{
+					if (m->gridRow - 1 == (dungeon->characters + k)->gridRow && m->gridCol - 1 == (dungeon->characters + k)->gridCol)
+					{
+						(dungeon->characters + k)->gridRow = m->gridRow;
+						(dungeon->characters + k)->gridCol = m->gridCol;
+					}
+				}
 				dungeon->dungeon[m->gridRow - 1][m->gridCol - 1].hardness <= 0;
 				m->gridCol--;
 				m->gridRow--;
@@ -1926,36 +2158,38 @@ void monster_move(Character *m, dungeon *dungeon)
 		{
 			if (dungeon->dungeon[m->gridRow + 1][m->gridCol + 1].hardness == 0)
 			{
-			if(m->gridRow+1==(dungeon->pc).gridRow&&m->gridCol+1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+1==(dungeon->characters+k)->gridRow&&m->gridCol+1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+				if (m->gridRow + 1 == (dungeon->pc).gridRow && m->gridCol + 1 == (dungeon->pc).gridCol)
+				{
+					dungeon->pc.health -= m->Damage.roll();
+					return;
+				}
+				for (int k = 1; k < dungeon->monstersAlive; k++)
+				{
+					if (m->gridRow + 1 == (dungeon->characters + k)->gridRow && m->gridCol + 1 == (dungeon->characters + k)->gridCol)
+					{
+						(dungeon->characters + k)->gridRow = m->gridRow;
+						(dungeon->characters + k)->gridCol = m->gridCol;
+					}
+				}
 				m->gridCol++;
 				m->gridRow++;
 				moved = 1;
 			}
 			else if (m->type & (1 << 2) && dungeon->dungeon[m->gridRow + 1][m->gridCol + 1].hardness <= 85)
 			{
-			if(m->gridRow+1==(dungeon->pc).gridRow&&m->gridCol+1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+1==(dungeon->characters+k)->gridRow&&m->gridCol+1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+				if (m->gridRow + 1 == (dungeon->pc).gridRow && m->gridCol + 1 == (dungeon->pc).gridCol)
+				{
+					dungeon->pc.health -= m->Damage.roll();
+					return;
+				}
+				for (int k = 1; k < dungeon->monstersAlive; k++)
+				{
+					if (m->gridRow + 1 == (dungeon->characters + k)->gridRow && m->gridCol + 1 == (dungeon->characters + k)->gridCol)
+					{
+						(dungeon->characters + k)->gridRow = m->gridRow;
+						(dungeon->characters + k)->gridCol = m->gridCol;
+					}
+				}
 				dungeon->dungeon[m->gridRow + 1][m->gridCol + 1].hardness = 0;
 				m->gridCol++;
 				m->gridRow++;
@@ -1964,7 +2198,7 @@ void monster_move(Character *m, dungeon *dungeon)
 			}
 			else if (m->type & (1 << 2))
 			{
-			
+
 				dungeon->dungeon[m->gridRow + 1][m->gridCol + 1].hardness -= 85;
 				moved = 1;
 			}
@@ -1973,36 +2207,38 @@ void monster_move(Character *m, dungeon *dungeon)
 		{
 			if (dungeon->dungeon[m->gridRow - 1][m->gridCol + 1].hardness == 0)
 			{
-			if(m->gridRow-1==(dungeon->pc).gridRow&&m->gridCol+1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow-1==(dungeon->characters+k)->gridRow&&m->gridCol+1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+				if (m->gridRow - 1 == (dungeon->pc).gridRow && m->gridCol + 1 == (dungeon->pc).gridCol)
+				{
+					dungeon->pc.health -= m->Damage.roll();
+					return;
+				}
+				for (int k = 1; k < dungeon->monstersAlive; k++)
+				{
+					if (m->gridRow - 1 == (dungeon->characters + k)->gridRow && m->gridCol + 1 == (dungeon->characters + k)->gridCol)
+					{
+						(dungeon->characters + k)->gridRow = m->gridRow;
+						(dungeon->characters + k)->gridCol = m->gridCol;
+					}
+				}
 				m->gridCol++;
 				m->gridRow--;
 				moved = 1;
 			}
 			else if (m->type & (1 << 2) && dungeon->dungeon[m->gridRow - 1][m->gridCol + 1].hardness <= 85)
 			{
-			if(m->gridRow-1==(dungeon->pc).gridRow&&m->gridCol+1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow-1==(dungeon->characters+k)->gridRow&&m->gridCol+1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+				if (m->gridRow - 1 == (dungeon->pc).gridRow && m->gridCol + 1 == (dungeon->pc).gridCol)
+				{
+					dungeon->pc.health -= m->Damage.roll();
+					return;
+				}
+				for (int k = 1; k < dungeon->monstersAlive; k++)
+				{
+					if (m->gridRow - 1 == (dungeon->characters + k)->gridRow && m->gridCol + 1 == (dungeon->characters + k)->gridCol)
+					{
+						(dungeon->characters + k)->gridRow = m->gridRow;
+						(dungeon->characters + k)->gridCol = m->gridCol;
+					}
+				}
 				dungeon->dungeon[m->gridRow - 1][m->gridCol + 1].hardness = 0;
 				m->gridCol++;
 				m->gridRow--;
@@ -2019,18 +2255,19 @@ void monster_move(Character *m, dungeon *dungeon)
 		{
 			if (dungeon->dungeon[m->gridRow + 1][m->gridCol - 1].hardness == 0)
 			{
-			if(m->gridRow+1==(dungeon->pc).gridRow&&m->gridCol-1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+1==(dungeon->characters+k)->gridRow&&m->gridCol-1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+				if (m->gridRow + 1 == (dungeon->pc).gridRow && m->gridCol - 1 == (dungeon->pc).gridCol)
+				{
+					dungeon->pc.health -= m->Damage.roll();
+					return;
+				}
+				for (int k = 1; k < dungeon->monstersAlive; k++)
+				{
+					if (m->gridRow + 1 == (dungeon->characters + k)->gridRow && m->gridCol - 1 == (dungeon->characters + k)->gridCol)
+					{
+						(dungeon->characters + k)->gridRow = m->gridRow;
+						(dungeon->characters + k)->gridCol = m->gridCol;
+					}
+				}
 				m->gridCol--;
 				m->gridRow++;
 				moved = 1;
@@ -2053,35 +2290,37 @@ void monster_move(Character *m, dungeon *dungeon)
 		{
 			if (dungeon->dungeon[m->gridRow][m->gridCol - 1].hardness == 0)
 			{
-			if(m->gridRow==(dungeon->pc).gridRow&&m->gridCol-1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow==(dungeon->characters+k)->gridRow&&m->gridCol-1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+				if (m->gridRow == (dungeon->pc).gridRow && m->gridCol - 1 == (dungeon->pc).gridCol)
+				{
+					dungeon->pc.health -= m->Damage.roll();
+					return;
+				}
+				for (int k = 1; k < dungeon->monstersAlive; k++)
+				{
+					if (m->gridRow == (dungeon->characters + k)->gridRow && m->gridCol - 1 == (dungeon->characters + k)->gridCol)
+					{
+						(dungeon->characters + k)->gridRow = m->gridRow;
+						(dungeon->characters + k)->gridCol = m->gridCol;
+					}
+				}
 				m->gridCol--;
 				moved = 1;
 			}
 			else if (m->type & (1 << 2) && dungeon->dungeon[m->gridRow - 1][m->gridCol].hardness <= 85)
 			{
-			if(m->gridRow==(dungeon->pc).gridRow&&m->gridCol-1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow==(dungeon->characters+k)->gridRow&&m->gridCol-1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+				if (m->gridRow == (dungeon->pc).gridRow && m->gridCol - 1 == (dungeon->pc).gridCol)
+				{
+					dungeon->pc.health -= m->Damage.roll();
+					return;
+				}
+				for (int k = 1; k < dungeon->monstersAlive; k++)
+				{
+					if (m->gridRow == (dungeon->characters + k)->gridRow && m->gridCol - 1 == (dungeon->characters + k)->gridCol)
+					{
+						(dungeon->characters + k)->gridRow = m->gridRow;
+						(dungeon->characters + k)->gridCol = m->gridCol;
+					}
+				}
 				dungeon->dungeon[m->gridRow][m->gridCol - 1].hardness = 0;
 				m->gridCol--;
 				dungeon->dungeon[m->gridRow][m->gridCol].character = '#';
@@ -2097,35 +2336,37 @@ void monster_move(Character *m, dungeon *dungeon)
 		{
 			if (dungeon->dungeon[m->gridRow - 1][m->gridCol].hardness == 0)
 			{
-			if(m->gridRow-1==(dungeon->pc).gridRow&&m->gridCol==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow-1==(dungeon->characters+k)->gridRow&&m->gridCol==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+				if (m->gridRow - 1 == (dungeon->pc).gridRow && m->gridCol == (dungeon->pc).gridCol)
+				{
+					dungeon->pc.health -= m->Damage.roll();
+					return;
+				}
+				for (int k = 1; k < dungeon->monstersAlive; k++)
+				{
+					if (m->gridRow - 1 == (dungeon->characters + k)->gridRow && m->gridCol == (dungeon->characters + k)->gridCol)
+					{
+						(dungeon->characters + k)->gridRow = m->gridRow;
+						(dungeon->characters + k)->gridCol = m->gridCol;
+					}
+				}
 				m->gridRow--;
 				moved = 1;
 			}
 			else if (m->type & (1 << 2) && dungeon->dungeon[m->gridRow - 1][m->gridCol].hardness <= 85)
 			{
-			if(m->gridRow-1==(dungeon->pc).gridRow&&m->gridCol==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow-1==(dungeon->characters+k)->gridRow&&m->gridCol==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+				if (m->gridRow - 1 == (dungeon->pc).gridRow && m->gridCol == (dungeon->pc).gridCol)
+				{
+					dungeon->pc.health -= m->Damage.roll();
+					return;
+				}
+				for (int k = 1; k < dungeon->monstersAlive; k++)
+				{
+					if (m->gridRow - 1 == (dungeon->characters + k)->gridRow && m->gridCol == (dungeon->characters + k)->gridCol)
+					{
+						(dungeon->characters + k)->gridRow = m->gridRow;
+						(dungeon->characters + k)->gridCol = m->gridCol;
+					}
+				}
 				dungeon->dungeon[m->gridRow - 1][m->gridCol].hardness = 0;
 				m->gridRow--;
 				dungeon->dungeon[m->gridRow][m->gridCol].character = '#';
@@ -2141,35 +2382,37 @@ void monster_move(Character *m, dungeon *dungeon)
 		{
 			if (dungeon->dungeon[m->gridRow][m->gridCol + 1].hardness == 0)
 			{
-			if(m->gridRow==(dungeon->pc).gridRow&&m->gridCol+1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow==(dungeon->characters+k)->gridRow&&m->gridCol+1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+				if (m->gridRow == (dungeon->pc).gridRow && m->gridCol + 1 == (dungeon->pc).gridCol)
+				{
+					dungeon->pc.health -= m->Damage.roll();
+					return;
+				}
+				for (int k = 1; k < dungeon->monstersAlive; k++)
+				{
+					if (m->gridRow == (dungeon->characters + k)->gridRow && m->gridCol + 1 == (dungeon->characters + k)->gridCol)
+					{
+						(dungeon->characters + k)->gridRow = m->gridRow;
+						(dungeon->characters + k)->gridCol = m->gridCol;
+					}
+				}
 				m->gridCol++;
 				moved = 1;
 			}
 			else if (m->type & (1 << 2) && dungeon->dungeon[m->gridRow][m->gridCol + 1].hardness <= 85)
 			{
-			if(m->gridRow==(dungeon->pc).gridRow&&m->gridCol+1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow==(dungeon->characters+k)->gridRow&&m->gridCol+1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+				if (m->gridRow == (dungeon->pc).gridRow && m->gridCol + 1 == (dungeon->pc).gridCol)
+				{
+					dungeon->pc.health -= m->Damage.roll();
+					return;
+				}
+				for (int k = 1; k < dungeon->monstersAlive; k++)
+				{
+					if (m->gridRow == (dungeon->characters + k)->gridRow && m->gridCol + 1 == (dungeon->characters + k)->gridCol)
+					{
+						(dungeon->characters + k)->gridRow = m->gridRow;
+						(dungeon->characters + k)->gridCol = m->gridCol;
+					}
+				}
 				dungeon->dungeon[m->gridRow][m->gridCol + 1].hardness = 0;
 				m->gridCol++;
 				dungeon->dungeon[m->gridRow][m->gridCol].character = '#';
@@ -2185,35 +2428,37 @@ void monster_move(Character *m, dungeon *dungeon)
 		{
 			if (dungeon->dungeon[m->gridRow + 1][m->gridCol].hardness == 0)
 			{
-			if(m->gridRow+1==(dungeon->pc).gridRow&&m->gridCol==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+1==(dungeon->characters+k)->gridRow&&m->gridCol==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+				if (m->gridRow + 1 == (dungeon->pc).gridRow && m->gridCol == (dungeon->pc).gridCol)
+				{
+					dungeon->pc.health -= m->Damage.roll();
+					return;
+				}
+				for (int k = 1; k < dungeon->monstersAlive; k++)
+				{
+					if (m->gridRow + 1 == (dungeon->characters + k)->gridRow && m->gridCol == (dungeon->characters + k)->gridCol)
+					{
+						(dungeon->characters + k)->gridRow = m->gridRow;
+						(dungeon->characters + k)->gridCol = m->gridCol;
+					}
+				}
 				m->gridRow++;
 				moved = 1;
 			}
 			else if (m->type & (1 << 2) && dungeon->dungeon[m->gridRow + 1][m->gridCol].hardness <= 85)
 			{
-			if(m->gridRow+1==(dungeon->pc).gridRow&&m->gridCol==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+1==(dungeon->characters+k)->gridRow&&m->gridCol==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+				if (m->gridRow + 1 == (dungeon->pc).gridRow && m->gridCol == (dungeon->pc).gridCol)
+				{
+					dungeon->pc.health -= m->Damage.roll();
+					return;
+				}
+				for (int k = 1; k < dungeon->monstersAlive; k++)
+				{
+					if (m->gridRow + 1 == (dungeon->characters + k)->gridRow && m->gridCol == (dungeon->characters + k)->gridCol)
+					{
+						(dungeon->characters + k)->gridRow = m->gridRow;
+						(dungeon->characters + k)->gridCol = m->gridCol;
+					}
+				}
 				dungeon->dungeon[m->gridRow + 1][m->gridCol].hardness = 0;
 				m->gridRow++;
 				dungeon->dungeon[m->gridRow][m->gridCol].character = '#';
@@ -2245,18 +2490,19 @@ void monster_move(Character *m, dungeon *dungeon)
 				{
 					if (dungeon->dungeon[m->gridRow + y][m->gridCol + x].hardness == 0)
 					{
-					if(m->gridRow+y==(dungeon->pc).gridRow&&m->gridCol+x==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-				for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+y==(dungeon->characters+k)->gridRow&&m->gridCol+x==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+						if (m->gridRow + y == (dungeon->pc).gridRow && m->gridCol + x == (dungeon->pc).gridCol)
+						{
+							dungeon->pc.health -= m->Damage.roll();
+							return;
+						}
+						for (int k = 1; k < dungeon->monstersAlive; k++)
+						{
+							if (m->gridRow + y == (dungeon->characters + k)->gridRow && m->gridCol + x == (dungeon->characters + k)->gridCol)
+							{
+								(dungeon->characters + k)->gridRow = m->gridRow;
+								(dungeon->characters + k)->gridCol = m->gridCol;
+							}
+						}
 						m->gridRow += y;
 						m->gridCol += x;
 						moved = 1;
@@ -2265,18 +2511,19 @@ void monster_move(Character *m, dungeon *dungeon)
 					{
 						if (dungeon->dungeon[m->gridRow + y][m->gridCol + x].hardness <= 85)
 						{
-						if(m->gridRow+y==(dungeon->pc).gridRow&&m->gridCol+x==(dungeon->pc).gridCol)
+							if (m->gridRow + y == (dungeon->pc).gridRow && m->gridCol + x == (dungeon->pc).gridCol)
+							{
+								dungeon->pc.health -= m->Damage.roll();
+								return;
+							}
+							for (int k = 1; k < dungeon->monstersAlive; k++)
+							{
+								if (m->gridRow + y == (dungeon->characters + k)->gridRow && m->gridCol + x == (dungeon->characters + k)->gridCol)
 								{
-									dungeon->pc.health-=m->Damage.roll();return;
+									(dungeon->characters + k)->gridRow = m->gridRow;
+									(dungeon->characters + k)->gridCol = m->gridCol;
 								}
-				for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+y==(dungeon->characters+k)->gridRow&&m->gridCol+x==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+							}
 							dungeon->dungeon[m->gridRow + y][m->gridCol + x].hardness = 0;
 							m->gridRow += y;
 							m->gridCol += x;
@@ -2301,36 +2548,38 @@ void monster_move(Character *m, dungeon *dungeon)
 			{
 				if (dungeon->dungeon[m->gridRow - 1][m->gridCol - 1].hardness == 0)
 				{
-				if(m->gridRow-1==(dungeon->pc).gridRow&&m->gridCol-1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow-1==(dungeon->characters+k)->gridRow&&m->gridCol-1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow - 1 == (dungeon->pc).gridRow && m->gridCol - 1 == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow - 1 == (dungeon->characters + k)->gridRow && m->gridCol - 1 == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					m->gridCol--;
 					m->gridRow--;
 					moved = 1;
 				}
 				else if (m->type & (1 << 2) && dungeon->dungeon[m->gridRow - 1][m->gridCol - 1].hardness <= 85)
 				{
-				if(m->gridRow-1==(dungeon->pc).gridRow&&m->gridCol-1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow-1==(dungeon->characters+k)->gridRow&&m->gridCol-1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow - 1 == (dungeon->pc).gridRow && m->gridCol - 1 == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow - 1 == (dungeon->characters + k)->gridRow && m->gridCol - 1 == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					dungeon->dungeon[m->gridRow - 1][m->gridCol - 1].hardness = 0;
 					m->gridCol--;
 					m->gridRow--;
@@ -2347,36 +2596,38 @@ void monster_move(Character *m, dungeon *dungeon)
 			{
 				if (dungeon->dungeon[m->gridRow + 1][m->gridCol + 1].hardness == 0)
 				{
-				if(m->gridRow+1==(dungeon->pc).gridRow&&m->gridCol-1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+1==(dungeon->characters+k)->gridRow&&m->gridCol+1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow + 1 == (dungeon->pc).gridRow && m->gridCol - 1 == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow + 1 == (dungeon->characters + k)->gridRow && m->gridCol + 1 == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					m->gridCol++;
 					m->gridRow++;
 					moved = 1;
 				}
 				else if (m->type & (1 << 2) && dungeon->dungeon[m->gridRow + 1][m->gridCol + 1].hardness <= 85)
 				{
-				if(m->gridRow+1==(dungeon->pc).gridRow&&m->gridCol+1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+1==(dungeon->characters+k)->gridRow&&m->gridCol+1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow + 1 == (dungeon->pc).gridRow && m->gridCol + 1 == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow + 1 == (dungeon->characters + k)->gridRow && m->gridCol + 1 == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					dungeon->dungeon[m->gridRow + 1][m->gridCol + 1].hardness = 0;
 					m->gridCol++;
 					m->gridRow++;
@@ -2393,35 +2644,37 @@ void monster_move(Character *m, dungeon *dungeon)
 			{
 				if (dungeon->dungeon[m->gridRow][m->gridCol - 1].hardness == 0)
 				{
-				if(m->gridRow==(dungeon->pc).gridRow&&m->gridCol-1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow==(dungeon->characters+k)->gridRow&&m->gridCol-1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow == (dungeon->pc).gridRow && m->gridCol - 1 == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow == (dungeon->characters + k)->gridRow && m->gridCol - 1 == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					m->gridCol--;
 					moved = 1;
 				}
 				else if (m->type & (1 << 2) && dungeon->dungeon[m->gridRow][m->gridCol - 1].hardness <= 85)
 				{
-				if(m->gridRow==(dungeon->pc).gridRow&&m->gridCol-1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow==(dungeon->characters+k)->gridRow&&m->gridCol-1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow == (dungeon->pc).gridRow && m->gridCol - 1 == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow == (dungeon->characters + k)->gridRow && m->gridCol - 1 == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					dungeon->dungeon[m->gridRow - 1][m->gridCol - 1].hardness = 0;
 					m->gridCol--;
 					dungeon->dungeon[m->gridRow][m->gridCol].character = '#';
@@ -2437,35 +2690,37 @@ void monster_move(Character *m, dungeon *dungeon)
 			{
 				if (dungeon->dungeon[m->gridRow - 1][m->gridCol].hardness == 0)
 				{
-				if(m->gridRow-1==(dungeon->pc).gridRow&&m->gridCol==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow-1==(dungeon->characters+k)->gridRow&&m->gridCol==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow - 1 == (dungeon->pc).gridRow && m->gridCol == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow - 1 == (dungeon->characters + k)->gridRow && m->gridCol == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					m->gridRow--;
 					moved = 1;
 				}
 				else if (m->type & (1 << 2) && dungeon->dungeon[m->gridRow - 1][m->gridCol].hardness <= 85)
 				{
-				if(m->gridRow-1==(dungeon->pc).gridRow&&m->gridCol==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow-1==(dungeon->characters+k)->gridRow&&m->gridCol==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow - 1 == (dungeon->pc).gridRow && m->gridCol == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow - 1 == (dungeon->characters + k)->gridRow && m->gridCol == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					dungeon->dungeon[m->gridRow - 1][m->gridCol].hardness = 0;
 					m->gridRow--;
 					dungeon->dungeon[m->gridRow][m->gridCol].character = '#';
@@ -2481,36 +2736,38 @@ void monster_move(Character *m, dungeon *dungeon)
 			{
 				if (dungeon->dungeon[m->gridRow - 1][m->gridCol + 1].hardness == 0)
 				{
-				if(m->gridRow-1==(dungeon->pc).gridRow&&m->gridCol+1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow-1==(dungeon->characters+k)->gridRow&&m->gridCol+1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow - 1 == (dungeon->pc).gridRow && m->gridCol + 1 == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow - 1 == (dungeon->characters + k)->gridRow && m->gridCol + 1 == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					m->gridCol++;
 					m->gridRow--;
 					moved = 1;
 				}
 				else if (m->type & (1 << 2) && dungeon->dungeon[m->gridRow - 1][m->gridCol - 1].hardness <= 85)
 				{
-				if(m->gridRow-1==(dungeon->pc).gridRow&&m->gridCol+1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow-1==(dungeon->characters+k)->gridRow&&m->gridCol+1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow - 1 == (dungeon->pc).gridRow && m->gridCol + 1 == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow - 1 == (dungeon->characters + k)->gridRow && m->gridCol + 1 == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					dungeon->dungeon[m->gridRow - 1][m->gridCol + 1].hardness = 0;
 					m->gridCol++;
 					m->gridRow--;
@@ -2527,36 +2784,38 @@ void monster_move(Character *m, dungeon *dungeon)
 			{
 				if (dungeon->dungeon[m->gridRow + 1][m->gridCol - 1].hardness == 0)
 				{
-				if(m->gridRow+1==(dungeon->pc).gridRow&&m->gridCol-1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+1==(dungeon->characters+k)->gridRow&&m->gridCol-1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow + 1 == (dungeon->pc).gridRow && m->gridCol - 1 == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow + 1 == (dungeon->characters + k)->gridRow && m->gridCol - 1 == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					m->gridCol--;
 					m->gridRow++;
 					moved = 1;
 				}
 				else if (m->type & (1 << 2) && dungeon->dungeon[m->gridRow + 1][m->gridCol - 1].hardness <= 85)
 				{
-				if(m->gridRow+1==(dungeon->pc).gridRow&&m->gridCol-1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+1==(dungeon->characters+k)->gridRow&&m->gridCol-1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow + 1 == (dungeon->pc).gridRow && m->gridCol - 1 == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow + 1 == (dungeon->characters + k)->gridRow && m->gridCol - 1 == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					dungeon->dungeon[m->gridRow + 1][m->gridCol - 1].hardness = 0;
 					m->gridCol--;
 					m->gridRow++;
@@ -2573,35 +2832,37 @@ void monster_move(Character *m, dungeon *dungeon)
 			{
 				if (dungeon->dungeon[m->gridRow][m->gridCol + 1].hardness == 0)
 				{
-				if(m->gridRow==(dungeon->pc).gridRow&&m->gridCol+1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow==(dungeon->characters+k)->gridRow&&m->gridCol+1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow == (dungeon->pc).gridRow && m->gridCol + 1 == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow == (dungeon->characters + k)->gridRow && m->gridCol + 1 == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					m->gridCol++;
 					moved = 1;
 				}
 				else if (m->type & (1 << 2) && dungeon->dungeon[m->gridRow - 1][m->gridCol - 1].hardness <= 85)
 				{
-				if(m->gridRow==(dungeon->pc).gridRow&&m->gridCol+1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow==(dungeon->characters+k)->gridRow&&m->gridCol+1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow == (dungeon->pc).gridRow && m->gridCol + 1 == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow == (dungeon->characters + k)->gridRow && m->gridCol + 1 == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					dungeon->dungeon[m->gridRow][m->gridCol + 1].hardness = 0;
 					m->gridCol++;
 					dungeon->dungeon[m->gridRow][m->gridCol].character = '#';
@@ -2617,35 +2878,37 @@ void monster_move(Character *m, dungeon *dungeon)
 			{
 				if (dungeon->dungeon[m->gridRow + 1][m->gridCol].hardness == 0)
 				{
-				if(m->gridRow+1==(dungeon->pc).gridRow&&m->gridCol==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+1==(dungeon->characters+k)->gridRow&&m->gridCol==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow + 1 == (dungeon->pc).gridRow && m->gridCol == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow + 1 == (dungeon->characters + k)->gridRow && m->gridCol == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					m->gridRow++;
 					moved = 1;
 				}
 				else if (m->type & (1 << 2) && dungeon->dungeon[m->gridRow - 1][m->gridCol - 1].hardness <= 85)
 				{
-				if(m->gridRow+1==(dungeon->pc).gridRow&&m->gridCol==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+1==(dungeon->characters+k)->gridRow&&m->gridCol==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow + 1 == (dungeon->pc).gridRow && m->gridCol == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow + 1 == (dungeon->characters + k)->gridRow && m->gridCol == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					dungeon->dungeon[m->gridRow + 1][m->gridCol].hardness = 0;
 					m->gridRow++;
 					dungeon->dungeon[m->gridRow][m->gridCol].character = '#';
@@ -2678,18 +2941,19 @@ void monster_move(Character *m, dungeon *dungeon)
 				{
 					if (dungeon->dungeon[m->gridRow + y][m->gridCol + x].hardness == 0)
 					{
-					if(m->gridRow+y==(dungeon->pc).gridRow&&m->gridCol+x==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-				for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+y==(dungeon->characters+k)->gridRow&&m->gridCol+x==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+						if (m->gridRow + y == (dungeon->pc).gridRow && m->gridCol + x == (dungeon->pc).gridCol)
+						{
+							dungeon->pc.health -= m->Damage.roll();
+							return;
+						}
+						for (int k = 1; k < dungeon->monstersAlive; k++)
+						{
+							if (m->gridRow + y == (dungeon->characters + k)->gridRow && m->gridCol + x == (dungeon->characters + k)->gridCol)
+							{
+								(dungeon->characters + k)->gridRow = m->gridRow;
+								(dungeon->characters + k)->gridCol = m->gridCol;
+							}
+						}
 						m->gridRow += y;
 						m->gridCol += x;
 					}
@@ -2697,18 +2961,19 @@ void monster_move(Character *m, dungeon *dungeon)
 					{
 						if (dungeon->dungeon[m->gridRow + y][m->gridCol + x].hardness <= 85)
 						{
-						if(m->gridRow+y==(dungeon->pc).gridRow&&m->gridCol+x==(dungeon->pc).gridCol)
+							if (m->gridRow + y == (dungeon->pc).gridRow && m->gridCol + x == (dungeon->pc).gridCol)
+							{
+								dungeon->pc.health -= m->Damage.roll();
+								return;
+							}
+							for (int k = 1; k < dungeon->monstersAlive; k++)
+							{
+								if (m->gridRow + y == (dungeon->characters + k)->gridRow && m->gridCol + x == (dungeon->characters + k)->gridCol)
 								{
-									dungeon->pc.health-=m->Damage.roll();return;
+									(dungeon->characters + k)->gridRow = m->gridRow;
+									(dungeon->characters + k)->gridCol = m->gridCol;
 								}
-				for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+y==(dungeon->characters+k)->gridRow&&m->gridCol+x==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+							}
 							dungeon->dungeon[m->gridRow + y][m->gridCol + x].hardness = 0;
 							m->gridRow += y;
 							m->gridCol += x;
@@ -2744,18 +3009,19 @@ void monster_move(Character *m, dungeon *dungeon)
 				{
 					if (dungeon->dungeon[m->gridRow + y][m->gridCol + x].hardness == 0)
 					{
-					if(m->gridRow+y==(dungeon->pc).gridRow&&m->gridCol+x==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-				for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+y==(dungeon->characters+k)->gridRow&&m->gridCol+x==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+						if (m->gridRow + y == (dungeon->pc).gridRow && m->gridCol + x == (dungeon->pc).gridCol)
+						{
+							dungeon->pc.health -= m->Damage.roll();
+							return;
+						}
+						for (int k = 1; k < dungeon->monstersAlive; k++)
+						{
+							if (m->gridRow + y == (dungeon->characters + k)->gridRow && m->gridCol + x == (dungeon->characters + k)->gridCol)
+							{
+								(dungeon->characters + k)->gridRow = m->gridRow;
+								(dungeon->characters + k)->gridCol = m->gridCol;
+							}
+						}
 						m->gridRow += y;
 						m->gridCol += x;
 						moved = 1;
@@ -2764,18 +3030,19 @@ void monster_move(Character *m, dungeon *dungeon)
 					{
 						if (dungeon->dungeon[m->gridRow + y][m->gridCol + x].hardness <= 85)
 						{
-						if(m->gridRow+y==(dungeon->pc).gridRow&&m->gridCol+x==(dungeon->pc).gridCol)
+							if (m->gridRow + y == (dungeon->pc).gridRow && m->gridCol + x == (dungeon->pc).gridCol)
+							{
+								dungeon->pc.health -= m->Damage.roll();
+								return;
+							}
+							for (int k = 1; k < dungeon->monstersAlive; k++)
+							{
+								if (m->gridRow + y == (dungeon->characters + k)->gridRow && m->gridCol + x == (dungeon->characters + k)->gridCol)
 								{
-									dungeon->pc.health-=m->Damage.roll();return;
+									(dungeon->characters + k)->gridRow = m->gridRow;
+									(dungeon->characters + k)->gridCol = m->gridCol;
 								}
-				for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+y==(dungeon->characters+k)->gridRow&&m->gridCol+x==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+							}
 							dungeon->dungeon[m->gridRow + y][m->gridCol + x].hardness = 0;
 							m->gridRow += y;
 							m->gridCol += x;
@@ -2799,18 +3066,19 @@ void monster_move(Character *m, dungeon *dungeon)
 			{
 				if (dungeon->dungeon[m->gridRow - 1][m->gridCol - 1].hardness == 0)
 				{
-				if(m->gridRow-1==(dungeon->pc).gridRow&&m->gridCol-1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow-1==(dungeon->characters+k)->gridRow&&m->gridCol-1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow - 1 == (dungeon->pc).gridRow && m->gridCol - 1 == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow - 1 == (dungeon->characters + k)->gridRow && m->gridCol - 1 == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					m->gridCol--;
 					m->gridRow--;
 					moved = 1;
@@ -2820,18 +3088,19 @@ void monster_move(Character *m, dungeon *dungeon)
 			{
 				if (dungeon->dungeon[m->gridRow + 1][m->gridCol + 1].hardness == 0)
 				{
-				if(m->gridRow+1==(dungeon->pc).gridRow&&m->gridCol+1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+1==(dungeon->characters+k)->gridRow&&m->gridCol+1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow + 1 == (dungeon->pc).gridRow && m->gridCol + 1 == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow + 1 == (dungeon->characters + k)->gridRow && m->gridCol + 1 == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					m->gridCol++;
 					m->gridRow++;
 					moved = 1;
@@ -2841,18 +3110,19 @@ void monster_move(Character *m, dungeon *dungeon)
 			{
 				if (dungeon->dungeon[m->gridRow - 1][m->gridCol + 1].hardness == 0)
 				{
-				if(m->gridRow-1==(dungeon->pc).gridRow&&m->gridCol+1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow-1==(dungeon->characters+k)->gridRow&&m->gridCol+1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow - 1 == (dungeon->pc).gridRow && m->gridCol + 1 == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow - 1 == (dungeon->characters + k)->gridRow && m->gridCol + 1 == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					m->gridCol++;
 					m->gridRow--;
 					moved = 1;
@@ -2862,18 +3132,19 @@ void monster_move(Character *m, dungeon *dungeon)
 			{
 				if (dungeon->dungeon[m->gridRow + 1][m->gridCol - 1].hardness == 0)
 				{
-				if(m->gridRow+1==(dungeon->pc).gridRow&&m->gridCol-1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+1==(dungeon->characters+k)->gridRow&&m->gridCol-1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow + 1 == (dungeon->pc).gridRow && m->gridCol - 1 == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow + 1 == (dungeon->characters + k)->gridRow && m->gridCol - 1 == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					m->gridCol--;
 					m->gridRow++;
 					moved = 1;
@@ -2883,18 +3154,19 @@ void monster_move(Character *m, dungeon *dungeon)
 			{
 				if (dungeon->dungeon[m->gridRow][m->gridCol + 1].hardness == 0)
 				{
-				if(m->gridRow==(dungeon->pc).gridRow&&m->gridCol+1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow==(dungeon->characters+k)->gridRow&&m->gridCol+1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow == (dungeon->pc).gridRow && m->gridCol + 1 == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow == (dungeon->characters + k)->gridRow && m->gridCol + 1 == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					m->gridCol++;
 					moved = 1;
 				}
@@ -2903,18 +3175,19 @@ void monster_move(Character *m, dungeon *dungeon)
 			{
 				if (dungeon->dungeon[m->gridRow + 1][m->gridCol].hardness == 0)
 				{
-				if(m->gridRow+1==(dungeon->pc).gridRow&&m->gridCol==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+1==(dungeon->characters+k)->gridRow&&m->gridCol==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow + 1 == (dungeon->pc).gridRow && m->gridCol == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow + 1 == (dungeon->characters + k)->gridRow && m->gridCol == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					m->gridRow++;
 					moved = 1;
 				}
@@ -2923,18 +3196,19 @@ void monster_move(Character *m, dungeon *dungeon)
 			{
 				if (dungeon->dungeon[m->gridRow][m->gridCol - 1].hardness == 0)
 				{
-				if(m->gridRow==(dungeon->pc).gridRow&&m->gridCol-1==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow==(dungeon->characters+k)->gridRow&&m->gridCol+1==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow == (dungeon->pc).gridRow && m->gridCol - 1 == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow == (dungeon->characters + k)->gridRow && m->gridCol + 1 == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					m->gridCol--;
 					moved = 1;
 				}
@@ -2943,18 +3217,19 @@ void monster_move(Character *m, dungeon *dungeon)
 			{
 				if (dungeon->dungeon[m->gridRow - 1][m->gridCol].hardness == 0)
 				{
-				if(m->gridRow-1==(dungeon->pc).gridRow&&m->gridCol==(dungeon->pc).gridCol)
-								{
-									dungeon->pc.health-=m->Damage.roll();return;
-								}
-			for(int k=1; k<dungeon->monstersAlive; k++)
-								{
-								if(m->gridRow+1==(dungeon->characters+k)->gridRow&&m->gridCol==(dungeon->characters+k)->gridCol)
-								{
-									(dungeon->characters+k)->gridRow=m->gridRow;
-									(dungeon->characters+k)->gridCol=m->gridCol;
-								}
-								}
+					if (m->gridRow - 1 == (dungeon->pc).gridRow && m->gridCol == (dungeon->pc).gridCol)
+					{
+						dungeon->pc.health -= m->Damage.roll();
+						return;
+					}
+					for (int k = 1; k < dungeon->monstersAlive; k++)
+					{
+						if (m->gridRow + 1 == (dungeon->characters + k)->gridRow && m->gridCol == (dungeon->characters + k)->gridCol)
+						{
+							(dungeon->characters + k)->gridRow = m->gridRow;
+							(dungeon->characters + k)->gridCol = m->gridCol;
+						}
+					}
 					m->gridRow--;
 					moved = 1;
 				}
@@ -2978,7 +3253,7 @@ int nextTurn(dungeon *d, heap_t *h)
 					(d->characters + i)->dead = 1;
 				}
 			}
-			if (d->pc.health<=0)
+			if (d->pc.health <= 0)
 			{
 				(d->characters)->dead = 1;
 			}
@@ -3275,7 +3550,7 @@ int main(int argc, char *argv[])
 			cellDungeon.dungeon[i][j].gridCol = j;
 		}
 	}
-	cellDungeon.pc.damage.set(100,2,4);
+	cellDungeon.pc.damage.set(100, 2, 4);
 	cellDungeon.pc.playerChar = '@';
 	cellDungeon.turn = 0;
 	//will default to 10 if no switch
@@ -3288,6 +3563,27 @@ int main(int argc, char *argv[])
 	cellDungeon.characters = (Character *)malloc((numofmonsters + 1) * sizeof(Character));
 	//first character will always be the PC followed by the monsters
 	cellDungeon.numOfCharacters = numofmonsters + 1;
+	for (int i = 0; i < PC_INVENTORY_SIZE; i++)
+	{
+		Object *empty = new Object;
+		empty->name = "Empty";
+		empty->type = objtype_no_type;
+		empty->pickedUp = true;
+		cellDungeon.pcInv.push_back(empty);
+	}
+	cellDungeon.pcInv.at(0)->type = objtype_WEAPON;
+	cellDungeon.pcInv.at(1)->type = objtype_OFFHAND;
+	cellDungeon.pcInv.at(2)->type = objtype_RANGED;
+	cellDungeon.pcInv.at(3)->type = objtype_LIGHT;
+	cellDungeon.pcInv.at(4)->type = objtype_ARMOR;
+	cellDungeon.pcInv.at(5)->type = objtype_HELMET;
+	cellDungeon.pcInv.at(6)->type = objtype_CLOAK;
+	cellDungeon.pcInv.at(7)->type = objtype_GLOVES;
+	cellDungeon.pcInv.at(8)->type = objtype_BOOTS;
+	cellDungeon.pcInv.at(9)->type = objtype_AMULET;
+	cellDungeon.pcInv.at(10)->type = objtype_RING;
+	cellDungeon.pcInv.at(11)->type = objtype_RING;
+
 	//initializing the dungeon
 	parse_descriptions(&cellDungeon);					//this hoe work
 	getMonstDescrip(cellDungeon.monsDes);				//THIS LINE IS STUPIDBFGJSKLABDFLJKASBFL
