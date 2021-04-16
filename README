@@ -1,6 +1,6 @@
 Emmauel Paz epaz@iastate.edu
 Caden Michael Last clast@iastate.edu
 Jack Dennis Kennedy jackkenn@iastate.edu
-Assignment 1.08
+Assignment 1.09
 
-  Our task for this week was to make the game be able to load objects and monsters and all of the information that comes with them
+  Our task for this week was to make an inventory for the PC and to allow the PC to pick equip and drop items. We also revamped the combat system to be absed on health and damage instead of everything dying in one hit.
