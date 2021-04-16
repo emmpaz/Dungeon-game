@@ -929,6 +929,7 @@ void displayItemDescription(dungeon *d, WINDOW *win, int itemIndex)
 			int option = wgetch(win);
 			if (option == 27 || option == 'Q' || option == 'I')
 			{
+				werase(win);
 				return;
 			}
 		}
