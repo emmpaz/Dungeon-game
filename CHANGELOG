@@ -73,3 +73,15 @@
 04/08/2021 ?:?? CML: Fixed Spongebob and couple other bugs
 
 04/08/2021 8:00 CML: Updated README and CHANGELOG
+
+04/13/2021 ?:?? JDK CML EP: Fix a lot of seg faults that were there for some reason
+
+04/13/2021 ?:?? CML: Made it so the monsters can not kill each other
+
+04/14/2021 ?:?? JDK: Added the ability to pick up equip and drop items
+
+04/15/2021 ?:?? CML: Made the fighting based on damage and health
+
+04/15/2021 ?:?? JDK: Finish everything else
+
+04/15/2021 8:00 CML: CHANGELOG and README
